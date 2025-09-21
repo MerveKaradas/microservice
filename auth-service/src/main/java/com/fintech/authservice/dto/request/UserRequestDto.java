@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import com.fintech.authservice.model.Role;
 
 public class UserRequestDto implements Serializable{
 
@@ -32,7 +31,6 @@ public class UserRequestDto implements Serializable{
              message = "Telefon numarası geçerli olmalı")
     private String phoneNumber;
 
-    private Role role = Role.USER; // Varsayılan rol USER
 
     public UserRequestDto(
             String email,
@@ -44,7 +42,7 @@ public class UserRequestDto implements Serializable{
         this.fullName = fullName;
         this.password = password;
         this.phoneNumber = phoneNumber;
-        this.role = Role.USER; // default rol USER
+        
     }
 
 
@@ -67,10 +65,6 @@ public class UserRequestDto implements Serializable{
 
     public static long getSerialversionuid() {
         return serialVersionUID;
-    }
-
-    public Role getRole() {
-        return role;
     }
 
     

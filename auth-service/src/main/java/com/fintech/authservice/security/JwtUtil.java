@@ -19,10 +19,7 @@ import javax.crypto.SecretKey;
 public class JwtUtil {
     
     private final SecretKey secretKey;
-    // application.yml den geliyor
-   // @Value("${jwt.accessExpiration}")
     private final long jwtExpirationInMs; 
-    // @Value("${jwt.refreshExpiration}") 
     private final long refreshExpirationInMs;
 
     public JwtUtil(@Value("${jwt.secret}") String secret, // String şeklinde alıyoruz dosyadan

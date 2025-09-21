@@ -2,6 +2,7 @@ package com.fintech.authservice.mapper;
 
 import com.fintech.authservice.dto.request.UserRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
+import com.fintech.authservice.model.Role;
 import com.fintech.authservice.model.User;
 
 public class UserMapper {
@@ -16,7 +17,7 @@ public class UserMapper {
             dto.getFullName(),
             encodedPassword,
             dto.getPhoneNumber(),
-            dto.getRole()
+            Role.USER
         );
     }
 

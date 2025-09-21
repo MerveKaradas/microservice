@@ -5,6 +5,7 @@ target/
 !**/src/test/**/target/
 yapılacaklar.txt
 
+
 ### STS ###
 .apt_generated
 .classpath

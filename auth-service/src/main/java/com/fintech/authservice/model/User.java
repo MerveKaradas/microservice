@@ -59,7 +59,9 @@ public class User implements UserDetails {
     @Column(name = "token_version", nullable = false)
     private Integer tokenVersion = 0;
 
-    
+    public User() {
+        // JPA için boş constructor
+    }
 
     public User(String email, String fullName, String password, String phoneNumber, Role role) {
         this.email = email;
