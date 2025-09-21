@@ -95,7 +95,7 @@ public class AuthServiceManager implements AuthService {
             .httpOnly(true)      // JS erişemez
             .path("/")           // site genelinde geçerli
             .maxAge(ttlSeconds) // gecerlilik süresi
-            .secure(true)        // https ise true
+            .secure(true)        // TODO : https ise true değilse false, ancak dev ortamında false yapılabilir hata çıkmaması adına 
             .sameSite("Strict")  // CSRF koruması
             .build();
 
