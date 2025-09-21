@@ -1,7 +1,7 @@
 package com.fintech.authservice.exception;
 
 public class PhoneNumberAlreadyExistsException extends RuntimeException {
-    String message;
+    String message = "Bu telefon numarası zaten mevcut.";
     
     public PhoneNumberAlreadyExistsException(String message) {
         super(message);
