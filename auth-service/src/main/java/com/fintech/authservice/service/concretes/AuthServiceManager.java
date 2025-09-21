@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,8 @@ import com.fintech.authservice.model.User;
 import com.fintech.authservice.repository.UserRepository;
 import com.fintech.authservice.security.JwtUtil;
 import com.fintech.authservice.service.abstarcts.AuthService;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -70,7 +73,7 @@ public class AuthServiceManager implements AuthService {
     }
 
 
-     public Map<String,String> login(String email, String password) {
+     public Map<String,String> login(String email, String password,HttpServletResponse response) {
 
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new AuthenticationException("Geçersiz kullanıcı adı veya şifre"));
@@ -80,35 +83,50 @@ public class AuthServiceManager implements AuthService {
         }
 
         Map<String, String> tokens = new HashMap<>();
+        String refreshToken = jwtUtil.generateRefreshToken(user);
+
         tokens.put("accessToken", jwtUtil.generateAccessToken(user));
-        tokens.put("refreshToken", jwtUtil.generateRefreshToken(user));
+        tokens.put("refreshToken", refreshToken);
+
+        long ttlSeconds = refreshTokenTtl / 1000; //Redis ve cookie için saniye cinsinden yazıyoruz
+
+        // Refresh token’ı HTTP-only cookie olarak ayarlıyoruz
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+            .httpOnly(true)      // JS erişemez
+            .path("/")           // site genelinde geçerli
+            .maxAge(ttlSeconds) // gecerlilik süresi
+            .secure(true)        // https ise true
+            .sameSite("Strict")  // CSRF koruması
+            .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
 
         return tokens;
         
     }
 
-    public void logout(String authHeader, String refreshToken) {
+    public void logout(String authHeader, String refreshToken,HttpServletResponse response) {
 
-        String token = authHeader.replace("Bearer ", "");
-        String jti = jwtUtil.getJtiFromToken(token);
-        long ttlSeconds = jwtUtil.getRemainingTtlSeconds(token);
-        
-        jwtBlacklistService.blacklist(jti, ttlSeconds);
-
-
-         // Access token blacklist
+        // Access token blacklist
         String accessToken = authHeader.replace("Bearer ", "");
         String accessJti = jwtUtil.getJtiFromToken(accessToken);
         jwtBlacklistService.blacklist(accessJti, jwtUtil.getRemainingTtlSeconds(accessToken));
 
-        // Refresh token Redis’den sil
+        // Refresh token Redisden silinmesi
         String refreshJti = jwtUtil.getJtiFromToken(refreshToken);
         redisTemplate.delete("refresh:" + refreshJti);
 
+        // Cookie temizleme
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)   // süresiz iptal
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 
     // Refresh token ile yeni token alma
-    public Map<String, String> refresh(String oldRefreshToken) {
+    public Map<String, String> refresh(String oldRefreshToken, HttpServletResponse response) {
 
         if (!jwtUtil.validateToken(oldRefreshToken)) {
             throw new RuntimeException("Refresh token geçersiz!");
@@ -116,7 +134,7 @@ public class AuthServiceManager implements AuthService {
 
         String oldJti = jwtUtil.getJtiFromToken(oldRefreshToken);
 
-        // Redis veya DB’de refresh token geçerliliğini kontrol et
+        // Redisde refresh token geçerliliği kontrolü
         String userIdStr = redisTemplate.opsForValue().get("refresh:" + oldJti);
         if (userIdStr == null) {
             throw new RuntimeException("Refresh token süresi dolmuş veya iptal edilmiş!");
@@ -125,21 +143,32 @@ public class AuthServiceManager implements AuthService {
         User user = userRepository.findByIdAndDeletedAtIsNull(Long.parseLong(userIdStr))
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
 
-        // Yeni access ve refresh token üret
+        // Yeni access ve refresh tokenlar
         String newAccessToken = jwtUtil.generateAccessToken(user);
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
 
         // Redis’e yeni refresh token kaydet ve eskiyi sil
         String newJti = jwtUtil.getJtiFromToken(newRefreshToken);
+        long ttlSeconds = refreshTokenTtl / 1000; //Redis ve cookie için saniye cinsinden yazıyoruz
 
-        
         redisTemplate.opsForValue().set("refresh:" + newJti, user.getId().toString(),
-                refreshTokenTtl, TimeUnit.SECONDS);
+                ttlSeconds, TimeUnit.SECONDS);
         redisTemplate.delete("refresh:" + oldJti);
 
         Map<String, String> tokens = new HashMap<>();
         tokens.put("accessToken", newAccessToken);
         tokens.put("refreshToken", newRefreshToken);
+
+        // Yeni token sonrasında Cookie’yi güncelleyiyoruz
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
+                .httpOnly(true)
+                .path("/")
+                .maxAge(ttlSeconds)
+                .secure(true)
+                .sameSite("Strict")
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+
         return tokens;
     }
 

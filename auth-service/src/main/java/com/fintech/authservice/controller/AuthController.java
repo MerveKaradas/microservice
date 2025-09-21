@@ -1,6 +1,5 @@
 package com.fintech.authservice.controller;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -16,6 +15,7 @@ import com.fintech.authservice.dto.request.UserRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -39,25 +39,27 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String,String>> login(
-            @RequestBody @Valid UserLoginRequestDto requestDto) {
+            @RequestBody @Valid UserLoginRequestDto requestDto,HttpServletResponse response) {
                
-        Map<String,String> tokens = authService.login(requestDto.getEmail(), requestDto.getPassword());
+        Map<String,String> tokens = authService.login(requestDto.getEmail(), requestDto.getPassword(),response);
         return ResponseEntity.ok(tokens);
     
     }
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader, // acces token headerda 
-                                        @CookieValue("refreshToken") String refreshToken) { // refresh token cookie'de
-        authService.logout(authHeader, refreshToken);
+                                        @CookieValue("refreshToken") String refreshToken, // refresh token cookie'de
+                                        HttpServletResponse response) { 
+        authService.logout(authHeader, refreshToken,response);
         return ResponseEntity.ok("Başarıyla çıkış yapıldı");
     }
 
 
     // INFO : Refresh token geçerli olduğu sürece, yeni access ve refresh token üretir (frontend kullanımında)
     @PostMapping("/refresh") 
-    public ResponseEntity<Map<String,String>> refresh(@CookieValue("refreshToken") String refreshToken) {
-        Map<String, String> newTokens = authService.refresh(refreshToken);
+    public ResponseEntity<Map<String,String>> refresh(@CookieValue("refreshToken") String refreshToken,
+                                                      HttpServletResponse response) {
+        Map<String, String> newTokens = authService.refresh(refreshToken, response);
         return ResponseEntity.ok(newTokens);
     }
 
