@@ -11,4 +11,5 @@ spring:
 
 jwt:
   secret: mySecretKey123456789
-  expiration: 3600000 # 1 saat (ms cinsinden)
+  accessExpiration: 1800000 # 30 dk (ms cinsinden)
+  refreshExpiration: 3600000 # 1 saat (ms cinsinden)

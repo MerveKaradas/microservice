@@ -18,15 +18,19 @@ public class JwtUtil {
     // application.yml den geliyor
     @Value("${jwt.secret}") // 
     private final SecretKey secretKey;
-    @Value("${jwt.expiration}")
-    private final long jwtExpirationInMs;
+    @Value("${jwt.accessExpiration}")
+    private final long jwtExpirationInMs; 
+    @Value("${jwt.refreshExpiration}") 
+    private final long refreshExpirationInMs;
 
-    public JwtUtil(SecretKey secretKey, long jwtExpirationInMs) {
+    public JwtUtil(SecretKey secretKey, long jwtExpirationInMs, long refreshExpirationInMs) {
         this.secretKey = secretKey;
         this.jwtExpirationInMs = jwtExpirationInMs;
+        this.refreshExpirationInMs = refreshExpirationInMs;
     }
 
-    public String generateToken(User user) {
+    // Acess Token üretimi
+    public String generateAccessToken(User user) {
         
         String jti = UUID.randomUUID().toString(); // benzersiz token id olusturuyoturz
 
@@ -39,6 +43,19 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs)) // token gecerlilik suresi
                 .signWith(secretKey) 
                 .compact(); 
+    }
+
+    // Refresh Token üretimi
+    public String generateRefreshToken(User user) {
+        String jti = UUID.randomUUID().toString();
+        return Jwts.builder()
+                .setId(jti)
+                .setSubject(user.getId().toString())
+                .claim("tokenVersion", user.getTokenVersion())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationInMs))
+                .signWith(secretKey)
+                .compact();
     }
 
     // Token icerisinden userId bilgisini aliyoruz

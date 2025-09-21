@@ -1,8 +1,10 @@
 package com.fintech.authservice.controller;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -36,18 +38,35 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
+    public ResponseEntity<Map<String,String>> login(
             @RequestBody @Valid UserLoginRequestDto requestDto) {
                
-        String token = authService.login(requestDto.getEmail(), requestDto.getPassword());
-        return ResponseEntity.ok(Collections.singletonMap("token", token));
+        Map<String,String> tokens = authService.login(requestDto.getEmail(), requestDto.getPassword());
+        return ResponseEntity.ok(tokens);
     
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader) {
-        authService.logout(authHeader);
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader, // acces token headerda 
+                                        @CookieValue("refreshToken") String refreshToken) { // refresh token cookie'de
+        authService.logout(authHeader, refreshToken);
         return ResponseEntity.ok("Başarıyla çıkış yapıldı");
+    }
+
+
+    // INFO : Refresh token geçerli olduğu sürece, yeni access ve refresh token üretir (frontend kullanımında)
+    @PostMapping("/refresh") 
+    public ResponseEntity<Map<String,String>> refresh(@CookieValue("refreshToken") String refreshToken) {
+        Map<String, String> newTokens = authService.refresh(refreshToken);
+        return ResponseEntity.ok(newTokens);
+    }
+
+
+
+    // TODO : Bu endpoint için gelişmiş şifre sıfırlama mekanizması oluşturulacak
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword() {
+        return ResponseEntity.ok("Şifre sıfırlama talimatları e-posta adresinize gönderildi.");
     }
 
     
