@@ -5,26 +5,30 @@ import org.springframework.stereotype.Component;
 
 import com.fintech.authservice.model.User;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
 import javax.crypto.SecretKey;
 
 @Component
 public class JwtUtil {
     
-    // application.yml den geliyor
-    @Value("${jwt.secret}") // 
     private final SecretKey secretKey;
-    @Value("${jwt.accessExpiration}")
+    // application.yml den geliyor
+   // @Value("${jwt.accessExpiration}")
     private final long jwtExpirationInMs; 
-    @Value("${jwt.refreshExpiration}") 
+    // @Value("${jwt.refreshExpiration}") 
     private final long refreshExpirationInMs;
 
-    public JwtUtil(SecretKey secretKey, long jwtExpirationInMs, long refreshExpirationInMs) {
-        this.secretKey = secretKey;
+    public JwtUtil(@Value("${jwt.secret}") String secret, // String şeklinde alıyoruz dosyadan
+                    @Value("${jwt.accessExpiration}") long jwtExpirationInMs, 
+                    @Value("${jwt.refreshExpiration}") long refreshExpirationInMs) {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)); // SecretKey'e çeviriyoruz
         this.jwtExpirationInMs = jwtExpirationInMs;
         this.refreshExpirationInMs = refreshExpirationInMs;
     }

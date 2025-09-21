@@ -33,11 +33,15 @@ public class AuthServiceManager implements AuthService {
     private final JwtUtil jwtUtil;
     private final JwtBlacklistService jwtBlacklistService;
     private final StringRedisTemplate redisTemplate; 
-    @Value("${jwt.refreshExpiration}") 
     private long refreshTokenTtl;
     
 
-    public AuthServiceManager(UserRepository userRepository,PasswordEncoder passwordEncoder, JwtUtil jwtUtil,JwtBlacklistService jwtBlacklistService, StringRedisTemplate redisTemplate, long refreshTokenTtl) {
+    public AuthServiceManager(UserRepository userRepository,
+                                PasswordEncoder passwordEncoder, 
+                                JwtUtil jwtUtil,
+                                JwtBlacklistService jwtBlacklistService, 
+                                StringRedisTemplate redisTemplate, 
+                                @Value("${jwt.refreshExpiration}")long refreshTokenTtl) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
