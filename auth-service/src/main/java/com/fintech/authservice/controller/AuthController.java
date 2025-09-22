@@ -2,11 +2,11 @@ package com.fintech.authservice.controller;
 
 import java.util.Map;
 
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,6 +15,7 @@ import com.fintech.authservice.dto.request.UserRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
@@ -47,17 +48,15 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader, // acces token headerda 
-                                        @CookieValue("refreshToken") String refreshToken, // refresh token cookie'de
+    public ResponseEntity<String> logout(HttpServletRequest request, 
                                         HttpServletResponse response) { 
-        authService.logout(authHeader, refreshToken,response);
+        authService.logout(request, response);
         return ResponseEntity.ok("Başarıyla çıkış yapıldı");
     }
 
-
     // INFO : Refresh token geçerli olduğu sürece, yeni access ve refresh token üretir (frontend kullanımında)
     @PostMapping("/refresh") 
-    public ResponseEntity<Map<String,String>> refresh(@CookieValue("refreshToken") String refreshToken,
+    public ResponseEntity<Map<String,String>> refresh(@CookieValue("refreshToken") String refreshToken, //refresh token cookie'de, access token headerda
                                                       HttpServletResponse response) {
         Map<String, String> newTokens = authService.refresh(refreshToken, response);
         return ResponseEntity.ok(newTokens);
