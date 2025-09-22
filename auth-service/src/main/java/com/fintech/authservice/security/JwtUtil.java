@@ -12,6 +12,8 @@ import java.util.UUID;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 import javax.crypto.SecretKey;
 
@@ -124,6 +126,28 @@ public class JwtUtil {
         Date exp = parseClaims(token).getExpiration();
         long diff = exp.getTime() - System.currentTimeMillis();
         return Math.max(0L, diff / 1000L);
+    }
+
+
+    // Header'dan access token alma
+    public String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7); // "Bearer " kısmını kırp
+        }
+        return null;
+    }
+
+    // Cookie'den refresh token alma
+    public String resolveRefreshTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("refreshToken".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
 }
