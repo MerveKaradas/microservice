@@ -19,6 +19,7 @@ import com.fintech.authservice.repository.UserRepository;
 import com.fintech.authservice.security.JwtUtil;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -93,6 +94,7 @@ public class AuthServiceManager implements AuthService {
         tokens.put("refreshToken", refreshToken);
 
         long ttlSeconds = refreshTokenTtl / 1000; //Redis ve cookie için saniye cinsinden yazıyoruz
+        redisTemplate.opsForValue().set("refresh:" + jwtUtil.getJtiFromToken(refreshToken) , user.getId().toString(), ttlSeconds, TimeUnit.SECONDS);
 
         // Refresh token’ı HTTP-only cookie olarak ayarlıyoruz
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
@@ -109,24 +111,33 @@ public class AuthServiceManager implements AuthService {
         
     }
 
-    public void logout(String authHeader, String refreshToken,HttpServletResponse response) {
+    public void logout(HttpServletRequest request,HttpServletResponse response) {
 
-        // Access token blacklist
-        String accessToken = authHeader.replace("Bearer ", "");
-        String accessJti = jwtUtil.getJtiFromToken(accessToken);
-        jwtBlacklistService.blacklist(accessJti, jwtUtil.getRemainingTtlSeconds(accessToken));
+        // Access token
+        String accessToken = jwtUtil.resolveToken(request); // Authorization headerdan alınır
+        if (accessToken != null && jwtUtil.validateToken(accessToken)) {
+            String jti = jwtUtil.getJtiFromToken(accessToken);
+            long remainingTtl = jwtUtil.getRemainingTtlSeconds(accessToken);
+            jwtBlacklistService.blacklist(jti, remainingTtl);
+        }
 
-        // Refresh token Redisden silinmesi
-        String refreshJti = jwtUtil.getJtiFromToken(refreshToken);
-        redisTemplate.delete("refresh:" + refreshJti);
+        // Refresh token
+        String refreshToken = jwtUtil.resolveRefreshTokenFromCookie(request);
+        if (refreshToken != null && jwtUtil.validateToken(refreshToken)) {
+            String refreshJti = jwtUtil.getJtiFromToken(refreshToken);
+            redisTemplate.delete("refresh:" + refreshJti);
 
-        // Cookie temizleme
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .path("/")
-                .maxAge(0)   // süresiz iptal
-                .build();
-        response.addHeader("Set-Cookie", cookie.toString());
+            // Cookie temizleme
+            ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(0)
+                    .build();
+
+            response.addHeader("Set-Cookie", cookie.toString());    
+        }
+
     }
 
     // Refresh token ile yeni token alma
