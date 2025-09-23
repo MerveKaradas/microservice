@@ -1,13 +1,6 @@
 package com.fintech.authservice.model;
 
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.GeneratedValue;
+import javax.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -81,6 +74,13 @@ public class User implements UserDetails {
         return email; // login alanı email
     }
 
+    @Override // Hesap etkin mi? (true ise etkin)
+    public boolean isEnabled() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'isEnabled'");
+    }
+
+
     // Hesap süresi dolmus mu? (true ise dolmamıs)
     // TODO : Eğer bir süre belirlenirse burası guncellenecek
     @Override 
@@ -101,6 +101,8 @@ public class User implements UserDetails {
     public boolean isCredentialsNonExpired() {
         return true;
     }
+
+    
 
     public Long getId() {
         return id;
@@ -179,6 +181,7 @@ public class User implements UserDetails {
         this.tokenVersion = tokenVersion;
     }
 
+    
 
     
     

@@ -5,8 +5,8 @@ import java.util.Map;
 import com.fintech.authservice.dto.request.UserRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 
 

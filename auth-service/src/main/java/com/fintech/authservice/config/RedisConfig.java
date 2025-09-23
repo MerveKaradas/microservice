@@ -13,7 +13,7 @@ public class RedisConfig {
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
         String redisHost = System.getenv("SPRING_REDIS_HOST"); // docker-composedan geliyor
-        int redisPort = Integer.parseInt(System.getenv("SPRING_REDIS_PORT")); // default 6379
+        int redisPort = Integer.parseInt(System.getenv("SPRING_REDIS_PORT")); 
         return new LettuceConnectionFactory(redisHost, redisPort);
     }
 
