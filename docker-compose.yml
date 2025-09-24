@@ -53,7 +53,6 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - auth-service
       - eureka-server
     environment:
       JWT_SECRET: c2VjdXJlYmFzZTY0ZW5jb2RlZGtleQ==
