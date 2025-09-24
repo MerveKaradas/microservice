@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://eureka-server:8761/eureka
+      register-with-eureka: true
+      fetch-registry: true
+      registry-fetch-interval-seconds: 10
+
+  cloud:
+    gateway:
+      routes:
+        - id: auth_route
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/**
+        - id: wallet_route
+          uri: http://wallet-service:8080
+          predicates:
+            - Path=/wallet/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET}
