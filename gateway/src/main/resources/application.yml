@@ -17,13 +17,38 @@ spring:
     gateway:
       routes:
         - id: auth_route
-          uri: http://auth-service:8080
+          uri: lb://auth-service
           predicates:
-            - Path=/auth/**
-        - id: wallet_route
-          uri: http://wallet-service:8080
-          predicates:
-            - Path=/wallet/**
+            - Path=/api/auth/**
+          filters:
+           - name: Retry
+             args:
+              retries: 2
+              statuses: BAD_GATEWAY, GATEWAY_TIMEOUT
+           - name: CircuitBreaker
+             args:
+                name: authServiceCircuitBreaker
+                fallbackUri: forward:/fallback/auth
+
+resilience4j:
+  retry:
+    instances:
+      authServiceRetry:
+        maxAttempts: 3
+        waitDuration: 2s
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+
+  circuitbreaker:
+    instances:
+      authServiceCircuitBreaker:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
 
 logging:
   level:
