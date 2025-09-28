@@ -40,6 +40,26 @@ services:
       JWT_REFRESHEXPIRATION: 3600000
       eureka.client.serviceUrl.defaultZone : http://eureka-server:8761/eureka
 
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+      - redis
+      - eureka-server
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      JWT_SECRET: c2VjdXJlYmFzZTY0ZW5jb2RlZGtleQ==
+      JWT_ACCESSEXPIRATION: 1800000
+      JWT_REFRESHEXPIRATION: 3600000
+      eureka.client.serviceUrl.defaultZone : http://eureka-server:8761/eureka
+
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
@@ -57,6 +77,36 @@ services:
     environment:
       JWT_SECRET: c2VjdXJlYmFzZTY0ZW5jb2RlZGtleQ==
       eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8085:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+
 
 volumes:
   postgres_data:
