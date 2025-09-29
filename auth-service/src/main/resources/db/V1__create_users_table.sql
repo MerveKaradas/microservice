@@ -1,12 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    fullname VARCHAR(255) NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
-    token_version INT DEFAULT 0,
-    phone_number VARCHAR(20) UNIQUE NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP
+    token_version INT DEFAULT 0 NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ
 );

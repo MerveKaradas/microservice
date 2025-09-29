@@ -28,6 +28,12 @@ spring:
     host: ${SPRING_REDIS_HOST} # docker-composedan geliyor
     port: ${SPRING_REDIS_PORT:6379} # default 6379
 
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 logging:
   level:
     org.springframework.cloud.netflix.eureka: DEBUG
