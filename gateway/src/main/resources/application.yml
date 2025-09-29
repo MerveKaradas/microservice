@@ -24,7 +24,9 @@ spring:
            - name: Retry
              args:
               retries: 2
-              statuses: BAD_GATEWAY, GATEWAY_TIMEOUT
+              statuses: 
+                - BAD_GATEWAY
+                - GATEWAY_TIMEOUT
            - name: CircuitBreaker
              args:
                 name: authServiceCircuitBreaker
