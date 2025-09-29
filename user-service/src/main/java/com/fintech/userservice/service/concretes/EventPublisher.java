@@ -3,7 +3,7 @@ package com.fintech.userservice.service.concretes;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import com.fintech.userservice.event.UserRegisteredEvent;
+import com.fintech.userservice.event.UserProfileCompletedEvent;
 
 @Service
 public class EventPublisher {
@@ -14,7 +14,9 @@ public class EventPublisher {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void publishUserRegistered(UserRegisteredEvent event) {
-        kafkaTemplate.send("user-registered", event.userId(),event);
+    public void publishUserProfileCompleted(UserProfileCompletedEvent event) {
+        kafkaTemplate.send("user-profileCompleted", event.userId(),event);
     }
+
+
 }
