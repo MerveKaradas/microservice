@@ -2,36 +2,35 @@ package com.fintech.authservice.model;
 
 import javax.persistence.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.GenericGenerator;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 public class User implements UserDetails {
 
-    // Kullanıcı bilgileri
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+        name = "UUID",
+        strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
+    private UUID id;
 
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String fullName;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(unique = true, nullable = false)
-    private String phoneNumber;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -40,13 +39,10 @@ public class User implements UserDetails {
     // Kullanıcı hesap durumu
     @CreationTimestamp
     @Column(name = "created_at" ,nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    private LocalDateTime deletedAt; // softdelete mantıgı ile silme
+    @Column(name = "deleted_at")
+    private Instant deletedAt; // softdelete mantıgı ile silme
 
     // Token geçersiz kılma süreci için
     @Column(name = "token_version", nullable = false)
@@ -56,11 +52,9 @@ public class User implements UserDetails {
         // JPA için boş constructor
     }
 
-    public User(String email, String fullName, String password, String phoneNumber, Role role) {
+    public User(String email, String passwordHash, Role role) {
         this.email = email;
-        this.fullName = fullName;
-        this.password = password;
-        this.phoneNumber = phoneNumber;
+        this.passwordHash = passwordHash;
         this.role = role;
     }
 
@@ -102,14 +96,12 @@ public class User implements UserDetails {
         return true;
     }
 
-    
-
-    public Long getId() {
-        return id;
+    public void softDelete() {
+        this.deletedAt = Instant.now();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void restore() {
+        this.deletedAt = null;
     }
 
     public String getEmail() {
@@ -120,29 +112,15 @@ public class User implements UserDetails {
         this.email = email;
     }
 
-    public String getFullName() {
-        return fullName;
+
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setPasswordHash(String password) {
+        this.passwordHash = password;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
 
     public Role getRole() {
         return role;
@@ -152,26 +130,10 @@ public class User implements UserDetails {
         this.role = role;
     }
 
-    public LocalDateTime getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
-    }
-
-    public void restore() {
-        this.deletedAt = null;
-    }
 
     public Integer getTokenVersion() {
         return tokenVersion;
@@ -181,11 +143,24 @@ public class User implements UserDetails {
         this.tokenVersion = tokenVersion;
     }
 
-    
+    @Override
+    public String getPassword() {
+       return this.passwordHash;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
 
     
-    
-
 
     
 }

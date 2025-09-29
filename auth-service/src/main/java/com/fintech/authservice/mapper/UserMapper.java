@@ -1,22 +1,20 @@
 package com.fintech.authservice.mapper;
 
-import com.fintech.authservice.dto.request.UserRequestDto;
+import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.model.Role;
 import com.fintech.authservice.model.User;
 
 public class UserMapper {
 
-    public static User toEntity(UserRequestDto dto, String encodedPassword) {
+    public static User toEntity(UserRegisterRequestDto dto, String encodedPassword) {
         if (dto == null) {
             return null;
         }
 
         return new User(
             dto.getEmail(),
-            dto.getFullName(),
             encodedPassword,
-            dto.getPhoneNumber(),
             Role.USER
         );
     }
@@ -28,8 +26,6 @@ public class UserMapper {
         return new UserResponseDto(
             entity.getId(),
             entity.getEmail(),
-            entity.getFullName(),
-            entity.getPhoneNumber(),
             entity.getRole()
         );
     }

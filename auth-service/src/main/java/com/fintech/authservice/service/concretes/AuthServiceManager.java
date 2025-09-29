@@ -8,10 +8,10 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.fintech.authservice.dto.request.UserRequestDto;
+import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
+import com.fintech.authservice.event.UserRegisteredEvent;
 import com.fintech.authservice.exception.AuthenticationException;
-import com.fintech.authservice.exception.PhoneNumberAlreadyExistsException;
 import com.fintech.authservice.exception.UserAlreadyExistsException;
 import com.fintech.authservice.mapper.UserMapper;
 import com.fintech.authservice.model.User;
@@ -35,6 +35,7 @@ public class AuthServiceManager implements AuthService {
     private final JwtBlacklistService jwtBlacklistService;
     private final StringRedisTemplate redisTemplate; 
     private long refreshTokenTtl;
+    private final EventPublisher eventPublisher;
     
 
     public AuthServiceManager(UserRepository userRepository,
@@ -42,25 +43,22 @@ public class AuthServiceManager implements AuthService {
                                 JwtUtil jwtUtil,
                                 JwtBlacklistService jwtBlacklistService, 
                                 StringRedisTemplate redisTemplate, 
-                                @Value("${jwt.refreshExpiration}")long refreshTokenTtl) {
+                                @Value("${jwt.refreshExpiration}")long refreshTokenTtl,
+                                EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.jwtBlacklistService = jwtBlacklistService;
         this.redisTemplate = redisTemplate;
         this.refreshTokenTtl = refreshTokenTtl;
+        this.eventPublisher = eventPublisher;
     }
 
-    public UserResponseDto registerUser(UserRequestDto requestDto) {
+    public UserResponseDto registerUser(UserRegisterRequestDto requestDto) {
 
         // Email kontrolü
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             throw new UserAlreadyExistsException("Bu email zaten kullanılıyor.");
-        }
-
-        // Telefon numara kontrolü
-        if (userRepository.existsByPhoneNumber(requestDto.getPhoneNumber())) {
-            throw new PhoneNumberAlreadyExistsException("Bu telefon no kullanılıyor.");
         }
 
         // Parola şifreleme
@@ -73,7 +71,16 @@ public class AuthServiceManager implements AuthService {
         User user = UserMapper.toEntity(requestDto, hashedPassword);
 
         userRepository.save(user);
-     
+
+        UserRegisteredEvent event = new UserRegisteredEvent(
+            user.getId().toString(),
+            user.getEmail(),
+            user.getRole(),
+            user.getCreatedAt()
+        );
+        
+        eventPublisher.publishUserRegistered(event);
+
         return UserMapper.toDto(user);
     }
 
@@ -83,7 +90,7 @@ public class AuthServiceManager implements AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new AuthenticationException("Geçersiz kullanıcı adı veya şifre"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw new AuthenticationException("Geçersiz kullanıcı adı veya şifre");
         }
 

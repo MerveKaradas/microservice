@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.authservice.dto.request.UserLoginRequestDto;
-import com.fintech.authservice.dto.request.UserRequestDto;
+import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
@@ -31,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/signUp")
     public ResponseEntity<UserResponseDto> register(
-            @RequestBody @Valid UserRequestDto requestDto) {
+            @RequestBody @Valid UserRegisterRequestDto requestDto) {
 
         return ResponseEntity.ok(authService.registerUser(requestDto));
 
