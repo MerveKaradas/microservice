@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +11,7 @@ import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.event.UserRegisteredEvent;
 import com.fintech.authservice.exception.AuthenticationException;
+import com.fintech.authservice.exception.GlobalExceptionHandler;
 import com.fintech.authservice.exception.UserAlreadyExistsException;
 import com.fintech.authservice.mapper.UserMapper;
 import com.fintech.authservice.model.User;
@@ -19,12 +19,16 @@ import com.fintech.authservice.repository.UserRepository;
 import com.fintech.authservice.security.JwtUtil;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AuthServiceManager implements AuthService {
@@ -36,6 +40,8 @@ public class AuthServiceManager implements AuthService {
     private final StringRedisTemplate redisTemplate; 
     private long refreshTokenTtl;
     private final EventPublisher eventPublisher;
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     
 
     public AuthServiceManager(UserRepository userRepository,
@@ -85,7 +91,7 @@ public class AuthServiceManager implements AuthService {
     }
 
 
-     public Map<String,String> login(String email, String password,HttpServletResponse response) {
+    public Map<String,String> login(String email, String password,HttpServletResponse response) {
 
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new AuthenticationException("Geçersiz kullanıcı adı veya şifre"));
@@ -104,48 +110,60 @@ public class AuthServiceManager implements AuthService {
         redisTemplate.opsForValue().set("refresh:" + jwtUtil.getJtiFromToken(refreshToken) , user.getId().toString(), ttlSeconds, TimeUnit.SECONDS);
 
         // Refresh token’ı HTTP-only cookie olarak ayarlıyoruz
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
-            .httpOnly(true)      // JS erişemez
-            .path("/")           // site genelinde geçerli
-            .maxAge(ttlSeconds) // gecerlilik süresi
-            .secure(true)        // TODO : https ise true değilse false, ancak dev ortamında false yapılabilir hata çıkmaması adına 
-            .sameSite("Strict")  // CSRF koruması
-            .build();
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true); // JS erişemez
+        cookie.setSecure(false); // TODO : https ise true değilse false, ancak dev ortamında false yapılabilir hata çıkmaması adına 
+        cookie.setPath("/");  // site genelinde geçerli
+        cookie.setMaxAge((int) ttlSeconds); // saniye cinsinden geçerlilik
+        cookie.setDomain("localhost");  
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addCookie(cookie);  
 
         return tokens;
         
     }
 
     public void logout(HttpServletRequest request,HttpServletResponse response) {
-
-        // Access token
-        String accessToken = jwtUtil.resolveToken(request); // Authorization headerdan alınır
-        if (accessToken != null && jwtUtil.validateToken(accessToken)) {
-            String jti = jwtUtil.getJtiFromToken(accessToken);
-            long remainingTtl = jwtUtil.getRemainingTtlSeconds(accessToken);
-            jwtBlacklistService.blacklist(jti, remainingTtl);
+       
+        String accessToken = jwtUtil.resolveToken(request);
+     
+        if (accessToken != null) {
+            try {
+                if (jwtUtil.validateToken(accessToken)) {
+                    String jti = jwtUtil.getJtiFromToken(accessToken);
+                    long remainingTtl = jwtUtil.getRemainingTtlSeconds(accessToken);
+            
+                    jwtBlacklistService.blacklist(jti, remainingTtl);
+                }
+            } catch (Exception e) {
+                logger.error("Access token geçersiz(expired)", e);
+            }
         }
-
-        // Refresh token
         String refreshToken = jwtUtil.resolveRefreshTokenFromCookie(request);
-        if (refreshToken != null && jwtUtil.validateToken(refreshToken)) {
-            String refreshJti = jwtUtil.getJtiFromToken(refreshToken);
-            redisTemplate.delete("refresh:" + refreshJti);
+       
 
-            // Cookie temizleme
-            ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
-                    .httpOnly(true)
-                    .secure(true)
-                    .path("/")
-                    .maxAge(0)
-                    .build();
+        if (refreshToken != null) {
+            try {
+                if (jwtUtil.validateToken(refreshToken)) {
+                    String refreshJti = jwtUtil.getJtiFromToken(refreshToken);
+                    
+                    redisTemplate.delete("refresh:" + refreshJti);
+                }
+            } catch (Exception e) {
+                logger.error("Refresh token geçersiz(expired)", e);
+            }
 
-            response.addHeader("Set-Cookie", cookie.toString());    
+            Cookie cookie = new Cookie("refreshToken", null);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+            logger.info("Refresh token cookie silindi");
         }
 
     }
+
 
     // Refresh token ile yeni token alma
     public Map<String, String> refresh(String oldRefreshToken, HttpServletResponse response) {
@@ -162,14 +180,15 @@ public class AuthServiceManager implements AuthService {
             throw new RuntimeException("Refresh token süresi dolmuş veya iptal edilmiş!");
         }
 
-        User user = userRepository.findByIdAndDeletedAtIsNull(Long.parseLong(userIdStr))
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
+        UUID userId = UUID.fromString(userIdStr); 
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
 
         // Yeni access ve refresh tokenlar
         String newAccessToken = jwtUtil.generateAccessToken(user);
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
 
-        // Redis’e yeni refresh token kaydet ve eskiyi sil
+        // Redis’e yeni refresh token ekleme
         String newJti = jwtUtil.getJtiFromToken(newRefreshToken);
         long ttlSeconds = refreshTokenTtl / 1000; //Redis ve cookie için saniye cinsinden yazıyoruz
 
@@ -181,15 +200,15 @@ public class AuthServiceManager implements AuthService {
         tokens.put("accessToken", newAccessToken);
         tokens.put("refreshToken", newRefreshToken);
 
-        // Yeni token sonrasında Cookie’yi güncelleyiyoruz
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
-                .httpOnly(true)
-                .path("/")
-                .maxAge(ttlSeconds)
-                .secure(true)
-                .sameSite("Strict")
-                .build();
-        response.addHeader("Set-Cookie", cookie.toString());
+        // Yeni token sonrası Cookie güncelleme
+        Cookie cookie = new Cookie("refreshToken", tokens.get("refreshToken"));
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");          // site genelinde geçerli
+        cookie.setMaxAge((int) ttlSeconds); // saniye 
+        cookie.setSecure(true);       
+        cookie.setDomain("localhost"); 
+
+        response.addCookie(cookie);
 
         return tokens;
     }
