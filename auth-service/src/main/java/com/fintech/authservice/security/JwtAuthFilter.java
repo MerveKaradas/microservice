@@ -2,6 +2,7 @@ package com.fintech.authservice.security;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -69,7 +70,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                Long userId = Long.parseLong(claims.getSubject());
+                UUID userId = UUID.fromString(claims.getSubject());
+
                 Integer tokenVersion = claims.get("tokenVersion",Integer.class);
 
                 if(tokenVersion == null){

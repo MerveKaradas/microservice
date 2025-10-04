@@ -21,6 +21,7 @@ public class User {
     private String email;       // Auth Service’den gelir, burada read-only
     private String phoneNumber;
     private String nationalId;  // TC No (PII → encrypt/mask gerekebilir)
+    @Enumerated(EnumType.STRING)
     private Role role;        // CUSTOMER / ADMIN
     private String status;      //TODO : Auth servisteki metota gore yap ACTIVE / BLOCKED / CLOSED
     // profil tamamlama durumu
