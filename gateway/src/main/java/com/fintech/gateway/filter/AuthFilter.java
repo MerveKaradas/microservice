@@ -1,80 +1,104 @@
 package com.fintech.gateway.filter;
 
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.http.HttpHeaders; 
+import com.fintech.gateway.dto.TokenResponseDto;
+import com.fintech.gateway.util.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import reactor.core.publisher.Mono;
-import com.fintech.gateway.util.JwtUtil;
-import io.jsonwebtoken.ExpiredJwtException;
-import com.fintech.gateway.dto.TokenResponseDto;
-import org.springframework.http.HttpStatus;
+
+import java.util.List;
 
 @Component
 public class AuthFilter implements GlobalFilter {
 
     private final WebClient webClient;
-    private final JwtUtil JwtUtil;
-    
+    private final JwtUtil jwtUtil;
+
+    // Açık (permitAll) endpointler
+    private static final List<String> PUBLIC_ENDPOINTS = List.of(
+            "/api/auth/login",
+            "/api/auth/signUp",
+            "/api/auth/refresh",
+            "/swagger-ui",
+            "/swagger-ui.html",
+            "/swagger-ui/",
+            "/v3/api-docs"
+    );
+
     public AuthFilter(WebClient.Builder webClientBuilder, JwtUtil jwtUtil) {
         this.webClient = webClientBuilder.baseUrl("http://auth-service:8080").build();
-        this.JwtUtil = jwtUtil;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String accessToken = exchange.getRequest()
-                .getHeaders()
-                .getFirst(HttpHeaders.AUTHORIZATION);
+        String path = exchange.getRequest().getURI().getPath();
 
-        if (accessToken == null) {
-            return chain.filter(exchange); // Public endpointler için akışa izin veriyoruz
+        // Public endpointler için akışa devam
+        if (isPublicEndpoint(path)) {
+            return chain.filter(exchange);
         }
 
+        // Protected endpointler için Authorization kontrol
+        String accessToken = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+        if (accessToken == null || !accessToken.startsWith("Bearer ")) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+
+        accessToken = accessToken.substring(7); 
+
         try {
-            // JWT doğrulama
-            JwtUtil.validateAccessToken(accessToken); 
+            // Access token doğrulama
+            jwtUtil.validateAccessToken(accessToken);
             return chain.filter(exchange);
-        } catch (ExpiredJwtException e) { // access token süresi dolunca
-            
-            // refresh token kontrolü
+
+        } catch (ExpiredJwtException e) {
+            // Access token süresi dolmuşsa
             String refreshToken = getRefreshTokenFromCookie(exchange);
-            if (refreshToken == null) { // refresh token yoksa unauthorized
-                return unauthorized(exchange);
+            if (refreshToken == null) {
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
 
-            // Eğer refresh token varsa Auth-service üzerinden yeni token alıyoruz
+            // AuthService üzerinden refresh token ile yenileme
             return webClient.post()
-                    .uri("/auth/refresh")
+                    .uri("/api/auth/refresh")
                     .header(HttpHeaders.COOKIE, "refreshToken=" + refreshToken)
                     .retrieve()
                     .bodyToMono(TokenResponseDto.class)
                     .flatMap(tokens -> {
-                        // Yeni access tokenı headera ekleme
+                        // Yeni access token header'a eklenir
                         exchange.getRequest().mutate()
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokens.getAccessToken())
                                 .build();
-                        // Responsea refresh token cookie ekleme
+                        // Yeni refresh token cookie olarak eklenir
                         exchange.getResponse().getHeaders().add(HttpHeaders.SET_COOKIE,
-                                "refreshToken=" + tokens.getRefreshToken() + "; HttpOnly; Path=/");
+                                "refreshToken=" + tokens.getRefreshToken() + "; HttpOnly; Path=/; SameSite=Strict; Secure");
                         return chain.filter(exchange);
                     })
-                    .onErrorResume(ex -> unauthorized(exchange)); // Token yenileme başarısız olursa unauthorized
+                    .onErrorResume(ex -> {
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().setComplete();
+                    });
         }
     }
 
-    private Mono<Void> unauthorized(ServerWebExchange exchange) {
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        return exchange.getResponse().setComplete();
+    private boolean isPublicEndpoint(String path) {
+        return PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith);
     }
 
     private String getRefreshTokenFromCookie(ServerWebExchange exchange) {
-        return exchange.getRequest().getCookies()
-                .getFirst("refreshToken") != null ?
-                exchange.getRequest().getCookies().getFirst("refreshToken").getValue() : null;
+        if (exchange.getRequest().getCookies().getFirst("refreshToken") != null) {
+            return exchange.getRequest().getCookies().getFirst("refreshToken").getValue();
+        }
+        return null;
     }
-
-    
 }

@@ -31,6 +31,28 @@ spring:
              args:
                 name: authServiceCircuitBreaker
                 fallbackUri: forward:/fallback/auth
+        - id: user_route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+           - name: Retry
+             args:
+              retries: 2
+              statuses: 
+                - BAD_GATEWAY
+                - GATEWAY_TIMEOUT
+           - name: CircuitBreaker
+             args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user     
+
+
+           
+  redis :
+    host: ${SPRING_REDIS_HOST} # docker-composedan geliyor
+    port: ${SPRING_REDIS_PORT:6379} # default 6379
+
 
 resilience4j:
   retry:
@@ -45,6 +67,12 @@ resilience4j:
   circuitbreaker:
     instances:
       authServiceCircuitBreaker:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      userServiceCircuitBreaker:
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
