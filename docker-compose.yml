@@ -75,6 +75,8 @@ services:
     depends_on:
       - eureka-server
     environment:
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
       JWT_SECRET: c2VjdXJlYmFzZTY0ZW5jb2RlZGtleQ==
       eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
 

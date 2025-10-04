@@ -1,5 +1,7 @@
 package com.fintech.authservice.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,6 +16,9 @@ import java.util.Map;
 
 @RestControllerAdvice // @ControllerAdvice + @ResponseBody sonucu JSON formatında cevap döner
 public class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 
       private ErrorResponse buildError(HttpStatus status, String message, HttpServletRequest request) {
         return new ErrorResponse.Builder()
@@ -75,6 +80,7 @@ public class GlobalExceptionHandler {
                                                        HttpServletRequest request) {
         
         System.out.println("Hata: " + ex.getMessage());
+        logger.error("Beklenmeyen hata oluştu", ex); 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Beklenmeyen bir hata oluştu", request));
     }
