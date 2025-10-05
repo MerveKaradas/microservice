@@ -7,7 +7,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +14,7 @@ import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
+import com.fintech.authservice.dto.response.UserTokenStatusResponseDto;
 import com.fintech.authservice.event.AuthEvent;
 import com.fintech.authservice.event.AuthEventType;
 import com.fintech.authservice.event.PasswordChangedData;
@@ -356,5 +356,17 @@ public class AuthServiceManager implements AuthService {
         return user.getTokenVersion();
     }
 
+    public UserTokenStatusResponseDto getTokenStatus(UUID userId) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
+
+        if (user.getDeletedAt() != null) {
+            throw new IllegalArgumentException("Kullanıcı silinmiş.");
+        }
+
+        boolean isDeleted = user.getDeletedAt() != null; // eğer deletedAt null değilse kullanıcı silinmiş
+  
+        return new UserTokenStatusResponseDto(user.getTokenVersion(), isDeleted);
+    }
     
 }

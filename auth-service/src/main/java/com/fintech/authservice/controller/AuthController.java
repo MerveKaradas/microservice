@@ -22,6 +22,7 @@ import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
+import com.fintech.authservice.dto.response.UserTokenStatusResponseDto;
 import com.fintech.authservice.model.User;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
@@ -105,6 +106,12 @@ public class AuthController {
     public ResponseEntity<Integer> getTokenVersion(@PathVariable UUID userId) {
         return ResponseEntity.ok(authService.getTokenVersion(userId));
     }
+
+    @GetMapping("/{userId}/token-status")
+    public ResponseEntity<UserTokenStatusResponseDto> getUserTokenStatus(@PathVariable UUID userId) {
+        return ResponseEntity.ok(authService.getTokenStatus(userId));
+    }
+
 
     // TODO : Bu endpoint için gelişmiş şifre sıfırlama mekanizması oluşturulacak
     @PostMapping("/forgot-password")

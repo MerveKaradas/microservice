@@ -7,13 +7,10 @@ import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
+import com.fintech.authservice.dto.response.UserTokenStatusResponseDto;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
-import org.springframework.security.core.userdetails.UserDetails;
-
 
 
 public interface AuthService {
@@ -33,5 +30,7 @@ public interface AuthService {
     void updateEmail(UUID userId, UserUpdateEmailRequestDto requestDto);
 
     Integer getTokenVersion(UUID userId);
+
+    UserTokenStatusResponseDto getTokenStatus(UUID userId);
     
 }
