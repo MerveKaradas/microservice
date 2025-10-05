@@ -23,5 +23,7 @@ public interface AuthService {
     Map<String, String> refresh(String oldRefreshToken, HttpServletResponse response);
 
     void updatePassword(UUID userId, UserUpdatePasswordRequestDto requestDto);
+
+    void deleteUser(String token);
     
 }

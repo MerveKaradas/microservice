@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -229,6 +231,32 @@ public class AuthServiceManager implements AuthService {
         user.setTokenVersion(user.getTokenVersion() + 1); // Tüm tokenları geçersiz kılmak için 
 
         userRepository.save(user);
+    }
+
+      public void deleteUser(String currentAccessToken) {
+        
+        // Kimliği doğrulanmış kullanıcı
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            throw new IllegalStateException("Kullanıcı kimliği doğrulanmamış.");
+        }
+
+        User user = (User) authentication.getPrincipal();
+
+        user.softDelete();
+
+        // Token versiyonu artırılıyor mevcut tokenların geçersiz kılınması için
+        user.setTokenVersion(user.getTokenVersion() + 1);
+
+        userRepository.save(user);
+
+        //  mevcut access token blacklist’e ekleniyor
+        if (currentAccessToken != null && jwtUtil.validateToken(currentAccessToken)) {
+            String jti = jwtUtil.getJtiFromToken(currentAccessToken);
+            long ttl = jwtUtil.getRemainingTtlSeconds(currentAccessToken);
+            jwtBlacklistService.blacklist(jti, ttl);
+        }
+
     }
 
     
