@@ -1,6 +1,7 @@
 package com.fintech.gateway.filter;
 
 import com.fintech.gateway.dto.TokenResponseDto;
+import com.fintech.gateway.dto.UserTokenStatusResponseDto;
 import com.fintech.gateway.util.JwtUtil;
 
 import io.jsonwebtoken.Claims;
@@ -70,11 +71,11 @@ public class AuthFilter implements GlobalFilter {
             }
             // Güncel tokenVersion bilgiisini auth-serviceden alıyoruz
             return webClient.get()
-                    .uri("/api/auth/" + userId + "/token-version")
+                    .uri("/api/auth/" + userId + "/token-status")
                     .retrieve()
-                    .bodyToMono(Integer.class)
-                    .flatMap(currentVersion -> {
-                        if (!tokenVersionFromToken.equals(currentVersion)) {
+                    .bodyToMono(UserTokenStatusResponseDto.class)
+                    .flatMap(status -> {
+                        if (status.isDeleted() || !tokenVersionFromToken.equals(status.getTokenVersion())) {
                             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                             return exchange.getResponse().setComplete();
                         }
