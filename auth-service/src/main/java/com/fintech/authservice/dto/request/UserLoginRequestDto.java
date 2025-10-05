@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class UserLoginRequestDto implements Serializable {
 
-    private final long serialVersionUUID = 2002L;
+    private final long serialVersionUUID = 1001L;
 
     private String email;
     private String password;

@@ -8,7 +8,7 @@ import javax.validation.constraints.NotBlank;
 
 public class UserUpdateEmailRequestDto implements Serializable {
 
-     private static final long serialVersionUID = 1012L;
+     private static final long serialVersionUID = 1003L;
 
     @Email(message = "Geçerli bir email adresi giriniz")
     @NotBlank(message = "Email boş olamaz")

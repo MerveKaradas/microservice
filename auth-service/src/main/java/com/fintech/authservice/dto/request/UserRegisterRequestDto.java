@@ -9,7 +9,7 @@ import javax.validation.constraints.Size;
 
 public class UserRegisterRequestDto implements Serializable{
 
-    private static final long serialVersionUID = 2001L;
+    private static final long serialVersionUID = 1002L;
 
     @Email(message = "Geçerli bir email adresi giriniz")
     @NotBlank(message = "Email boş olamaz")

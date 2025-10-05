@@ -9,7 +9,7 @@ import javax.validation.constraints.Size;
 
 public class UserUpdatePasswordRequestDto implements Serializable {
 
-    private final long serialVersionUID = 2003L;
+    private final long serialVersionUID = 1004L;
 
     
     @NotBlank(message = "Eski parola boş olamaz.")

@@ -42,7 +42,7 @@ public class User implements UserDetails {
     private Instant createdAt;
 
     @Column(name = "deleted_at")
-    private Instant deletedAt; // softdelete mantıgı ile silme
+    private Instant deletedAt = null; // softdelete mantıgı ile silme
 
     // Token geçersiz kılma süreci için
     @Column(name = "token_version", nullable = false)
