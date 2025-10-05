@@ -1,8 +1,10 @@
 package com.fintech.authservice.service.abstarcts;
 
 import java.util.Map;
+import java.util.UUID;
 
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
+import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,5 +21,7 @@ public interface AuthService {
     void logout(HttpServletRequest request,HttpServletResponse response);
 
     Map<String, String> refresh(String oldRefreshToken, HttpServletResponse response);
+
+    void updatePassword(UUID userId, UserUpdatePasswordRequestDto requestDto);
     
 }

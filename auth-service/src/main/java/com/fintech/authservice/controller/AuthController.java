@@ -1,9 +1,13 @@
 package com.fintech.authservice.controller;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,7 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.authservice.dto.request.UserLoginRequestDto;
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
+import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
+import com.fintech.authservice.model.User;
 import com.fintech.authservice.service.abstarcts.AuthService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -61,6 +67,16 @@ public class AuthController {
         return ResponseEntity.ok(newTokens);
     }
 
+    @PatchMapping("/me/password")
+    public ResponseEntity<String> updateUserPassword(
+            @Valid @RequestBody UserUpdatePasswordRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        UUID userId = ((User) userDetails).getId();
+        authService.updatePassword(userId, requestDto);
+
+        return ResponseEntity.ok("Password başarılı bir şekilde güncellendi"); 
+    }
 
 
     // TODO : Bu endpoint için gelişmiş şifre sıfırlama mekanizması oluşturulacak

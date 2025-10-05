@@ -4,10 +4,12 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
+import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.event.UserRegisteredEvent;
 import com.fintech.authservice.exception.AuthenticationException;
@@ -42,7 +44,6 @@ public class AuthServiceManager implements AuthService {
     private final EventPublisher eventPublisher;
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    
 
     public AuthServiceManager(UserRepository userRepository,
                                 PasswordEncoder passwordEncoder, 
@@ -211,6 +212,23 @@ public class AuthServiceManager implements AuthService {
         response.addCookie(cookie);
 
         return tokens;
+    }
+
+
+    public void updatePassword(UUID userId, UserUpdatePasswordRequestDto requestDto) {
+
+       User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
+
+        // Eski şifre kontrolü
+        if (!passwordEncoder.matches(requestDto.getOldPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Eski parola hatalı!");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(requestDto.getNewPassword()));
+        user.setTokenVersion(user.getTokenVersion() + 1); // Tüm tokenları geçersiz kılmak için 
+
+        userRepository.save(user);
     }
 
     
