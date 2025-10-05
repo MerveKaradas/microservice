@@ -2,6 +2,8 @@ package com.fintech.gateway.filter;
 
 import com.fintech.gateway.dto.TokenResponseDto;
 import com.fintech.gateway.util.JwtUtil;
+
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class AuthFilter implements GlobalFilter {
@@ -56,9 +59,28 @@ public class AuthFilter implements GlobalFilter {
         accessToken = accessToken.substring(7); 
 
         try {
-            // Access token doğrulama
-            jwtUtil.validateAccessToken(accessToken);
-            return chain.filter(exchange);
+             
+            Claims claims = jwtUtil.extractAllClaims(accessToken);
+            UUID userId = UUID.fromString(claims.getSubject());
+            Integer tokenVersionFromToken = claims.get("tokenVersion", Integer.class);
+           
+            if (userId == null || tokenVersionFromToken == null) {
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
+            }
+            // Güncel tokenVersion bilgiisini auth-serviceden alıyoruz
+            return webClient.get()
+                    .uri("/api/auth/" + userId + "/token-version")
+                    .retrieve()
+                    .bodyToMono(Integer.class)
+                    .flatMap(currentVersion -> {
+                        if (!tokenVersionFromToken.equals(currentVersion)) {
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return exchange.getResponse().setComplete();
+                        }
+                        return chain.filter(exchange);
+                    });
+
 
         } catch (ExpiredJwtException e) {
             // Access token süresi dolmuşsa
