@@ -4,11 +4,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
+import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 
 
@@ -25,5 +27,7 @@ public interface AuthService {
     void updatePassword(UUID userId, UserUpdatePasswordRequestDto requestDto);
 
     void deleteUser(String token);
+
+    void updateEmail(UUID userId, UserUpdateEmailRequestDto requestDto);
     
 }

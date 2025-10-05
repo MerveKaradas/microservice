@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
+import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.event.UserRegisteredEvent;
@@ -233,7 +234,8 @@ public class AuthServiceManager implements AuthService {
         userRepository.save(user);
     }
 
-      public void deleteUser(String currentAccessToken) {
+
+    public void deleteUser(String currentAccessToken) {
         
         // Kimliği doğrulanmış kullanıcı
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -257,6 +259,26 @@ public class AuthServiceManager implements AuthService {
             jwtBlacklistService.blacklist(jti, ttl);
         }
 
+    }
+
+
+    public void updateEmail(UUID userId, UserUpdateEmailRequestDto requestDto) {
+
+       User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
+
+        // Request email unique kontrolü
+          if (requestDto.getNewEmail() != null &&
+            !requestDto.getNewEmail().isEmpty() &&
+            !user.getEmail().equals(requestDto.getNewEmail()) &&
+            userRepository.existsByEmail(requestDto.getNewEmail())) {
+            throw new UserAlreadyExistsException("Bu email zaten kullanılıyor.");
+        }
+
+        user.setEmail(requestDto.getNewEmail());
+        user.setTokenVersion(user.getTokenVersion() + 1); // Tüm tokenları geçersiz kılmak için
+
+        userRepository.save(user);
     }
 
     

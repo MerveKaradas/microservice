@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.authservice.dto.request.UserLoginRequestDto;
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
+import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.model.User;
@@ -78,6 +79,16 @@ public class AuthController {
         authService.updatePassword(userId, requestDto);
 
         return ResponseEntity.ok("Password başarılı bir şekilde güncellendi"); 
+    }
+
+    @PatchMapping("/me/email")
+    public ResponseEntity<String> updateUserEmail(
+            @Valid @RequestBody UserUpdateEmailRequestDto requestDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        UUID userId = ((User) userDetails).getId();
+        authService.updateEmail(userId, requestDto);
+        return ResponseEntity.ok("Email başarılı bir şekilde güncellendi");
     }
 
 
