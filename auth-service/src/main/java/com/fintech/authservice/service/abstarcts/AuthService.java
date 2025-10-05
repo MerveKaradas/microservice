@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
+import org.springframework.security.core.userdetails.UserDetails;
+
 
 
 public interface AuthService {
@@ -29,5 +31,7 @@ public interface AuthService {
     void deleteUser(String token);
 
     void updateEmail(UUID userId, UserUpdateEmailRequestDto requestDto);
+
+    Integer getTokenVersion(UUID userId);
     
 }

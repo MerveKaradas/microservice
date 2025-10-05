@@ -5,11 +5,13 @@ public class UserChangedEmail implements EventData {
     String userId;
     String oldEmail;
     String newEmail;
+    Integer tokenVersion;
 
-    public UserChangedEmail(String userId, String oldEmail, String newEmail) {
+    public UserChangedEmail(String userId, String oldEmail, String newEmail,Integer tokenVersion) {
         this.userId = userId;
         this.oldEmail = oldEmail;
         this.newEmail = newEmail;
+        this.tokenVersion = tokenVersion;
     }
 
     public String getUserId() {
@@ -35,5 +37,10 @@ public class UserChangedEmail implements EventData {
     public void setNewEmail(String newEmail) {
         this.newEmail = newEmail;
     }
+
+    public Integer getTokenVersion() {
+        return tokenVersion;
+    }
+    
     
 }

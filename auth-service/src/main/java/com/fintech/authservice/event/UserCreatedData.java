@@ -10,12 +10,14 @@ public class UserCreatedData implements EventData {
     String email;
     Role role;
     Instant createdAt;
+    Integer tokenVersion;
 
-    public UserCreatedData(String userId, String email, Role role, Instant createdAt) {
+    public UserCreatedData(String userId, String email, Role role, Instant createdAt, Integer tokenVersion) {
         this.userId = userId;
         this.email = email;
         this.role = role;
         this.createdAt = createdAt;
+        this.tokenVersion = tokenVersion;
     }
     
     public String getUserId() {

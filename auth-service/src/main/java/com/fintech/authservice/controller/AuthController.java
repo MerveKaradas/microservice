@@ -8,7 +8,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -97,6 +99,11 @@ public class AuthController {
         String token = authHeader.substring(7);
         authService.deleteUser(token);
         return ResponseEntity.ok("Kullanıcı başarılı bir şekilde silindi");
+    }
+
+    @GetMapping("/{userId}/token-version")
+    public ResponseEntity<Integer> getTokenVersion(@PathVariable UUID userId) {
+        return ResponseEntity.ok(authService.getTokenVersion(userId));
     }
 
     // TODO : Bu endpoint için gelişmiş şifre sıfırlama mekanizması oluşturulacak

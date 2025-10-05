@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -99,7 +100,8 @@ public class AuthServiceManager implements AuthService {
                 user.getId().toString(),
                 user.getEmail(),
                 user.getRole(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                user.getTokenVersion()
             ))
             .build();    
 
@@ -297,7 +299,8 @@ public class AuthServiceManager implements AuthService {
             .data(new UserDeletedData(
                 user.getId().toString(),
                 user.getEmail(),
-                user.getDeletedAt()
+                user.getDeletedAt(),
+                user.getTokenVersion()
             ))
             .build();    
 
@@ -335,11 +338,22 @@ public class AuthServiceManager implements AuthService {
             .data(new UserChangedEmail(
                 user.getId().toString(),
                 oldEmail,
-                user.getEmail()
+                user.getEmail(),
+                user.getTokenVersion()
+
             ))
             .build();    
 
         eventPublisher.publish(event);
+    }
+
+
+    public Integer getTokenVersion(UUID userId) {
+        
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı."));
+
+        return user.getTokenVersion();
     }
 
     

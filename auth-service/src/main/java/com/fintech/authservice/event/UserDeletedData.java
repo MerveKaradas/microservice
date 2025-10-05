@@ -6,13 +6,15 @@ public class UserDeletedData implements EventData  {
     
     String userId;
     String email;
+    Integer tokenVersion;
     Instant deletedAt;
 
     
-    public UserDeletedData(String userId, String email, Instant deletedAt) {
+    public UserDeletedData(String userId, String email, Instant deletedAt,Integer tokenVersion) {
         this.userId = userId;
         this.email = email;
         this.deletedAt = deletedAt;
+        this.tokenVersion = tokenVersion;
     }
     
     public String getUserId() {
