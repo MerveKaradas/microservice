@@ -96,6 +96,10 @@ public class User implements UserDetails {
         return true;
     }
 
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
     public void softDelete() {
         this.deletedAt = Instant.now();
     }

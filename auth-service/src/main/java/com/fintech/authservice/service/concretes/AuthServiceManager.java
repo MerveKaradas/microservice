@@ -14,7 +14,12 @@ import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
-import com.fintech.authservice.event.UserRegisteredEvent;
+import com.fintech.authservice.event.AuthEvent;
+import com.fintech.authservice.event.AuthEventType;
+import com.fintech.authservice.event.PasswordChangedData;
+import com.fintech.authservice.event.UserChangedEmail;
+import com.fintech.authservice.event.UserCreatedData;
+import com.fintech.authservice.event.UserDeletedData;
 import com.fintech.authservice.exception.AuthenticationException;
 import com.fintech.authservice.exception.GlobalExceptionHandler;
 import com.fintech.authservice.exception.UserAlreadyExistsException;
@@ -46,6 +51,9 @@ public class AuthServiceManager implements AuthService {
     private long refreshTokenTtl;
     private final EventPublisher eventPublisher;
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @Value("${spring.application.name}")
+    private String serviceName;
 
 
     public AuthServiceManager(UserRepository userRepository,
@@ -82,14 +90,20 @@ public class AuthServiceManager implements AuthService {
 
         userRepository.save(user);
 
-        UserRegisteredEvent event = new UserRegisteredEvent(
-            user.getId().toString(),
-            user.getEmail(),
-            user.getRole(),
-            user.getCreatedAt()
-        );
-        
-        eventPublisher.publishUserRegistered(event);
+        AuthEvent<UserCreatedData> event = AuthEvent.<UserCreatedData>builder()
+            .eventId(UUID.randomUUID().toString())
+            .eventType(AuthEventType.USER_CREATED)
+            .timestamp(java.time.Instant.now())
+            .source(serviceName)
+            .data(new UserCreatedData(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getRole(),
+                user.getCreatedAt()
+            ))
+            .build();    
+
+        eventPublisher.publish(event);
 
         return UserMapper.toDto(user);
     }
@@ -232,6 +246,22 @@ public class AuthServiceManager implements AuthService {
         user.setTokenVersion(user.getTokenVersion() + 1); // Tüm tokenları geçersiz kılmak için 
 
         userRepository.save(user);
+
+        AuthEvent<PasswordChangedData> event = AuthEvent.<PasswordChangedData>builder()
+            .eventId(UUID.randomUUID().toString())
+            .eventType(AuthEventType.PASSWORD_CHANGED)
+            .timestamp(java.time.Instant.now())
+            .source(serviceName)
+            .data(new PasswordChangedData(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getTokenVersion()
+            ))
+            .build();    
+
+        eventPublisher.publish(event);
+
+
     }
 
 
@@ -259,6 +289,21 @@ public class AuthServiceManager implements AuthService {
             jwtBlacklistService.blacklist(jti, ttl);
         }
 
+        AuthEvent<UserDeletedData> event = AuthEvent.<UserDeletedData>builder()
+            .eventId(UUID.randomUUID().toString())
+            .eventType(AuthEventType.USER_DELETED)
+            .timestamp(java.time.Instant.now())
+            .source(serviceName)
+            .data(new UserDeletedData(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getDeletedAt()
+            ))
+            .build();    
+
+        eventPublisher.publish(event);
+
+
     }
 
 
@@ -275,10 +320,26 @@ public class AuthServiceManager implements AuthService {
             throw new UserAlreadyExistsException("Bu email zaten kullanılıyor.");
         }
 
+        String oldEmail = user.getEmail();
+
         user.setEmail(requestDto.getNewEmail());
         user.setTokenVersion(user.getTokenVersion() + 1); // Tüm tokenları geçersiz kılmak için
 
         userRepository.save(user);
+
+        AuthEvent<UserChangedEmail> event = AuthEvent.<UserChangedEmail>builder()
+            .eventId(UUID.randomUUID().toString())
+            .eventType(AuthEventType.EMAIL_CHANGED)
+            .timestamp(java.time.Instant.now())
+            .source(serviceName)
+            .data(new UserChangedEmail(
+                user.getId().toString(),
+                oldEmail,
+                user.getEmail()
+            ))
+            .build();    
+
+        eventPublisher.publish(event);
     }
 
     
