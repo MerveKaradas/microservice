@@ -15,7 +15,7 @@ public class EventPublisher {
         this.kafkaTemplate = kafkaTemplate;
     } 
 
-    public void publish(AuthEvent event) {
+    public void publish(AuthEvent<? extends EventData> event) {
         kafkaTemplate.send("auth-events", event.getEventId(), event);
     }
     

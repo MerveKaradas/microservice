@@ -1,13 +1,13 @@
 package com.fintech.authservice.event;
 
-public class UserChangedEmail implements EventData {
+public class UserChangedEmailData implements EventData {
     
     String userId;
     String oldEmail;
     String newEmail;
     Integer tokenVersion;
 
-    public UserChangedEmail(String userId, String oldEmail, String newEmail,Integer tokenVersion) {
+    public UserChangedEmailData(String userId, String oldEmail, String newEmail,Integer tokenVersion) {
         this.userId = userId;
         this.oldEmail = oldEmail;
         this.newEmail = newEmail;

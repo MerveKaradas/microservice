@@ -18,7 +18,7 @@ import com.fintech.authservice.dto.response.UserTokenStatusResponseDto;
 import com.fintech.authservice.event.AuthEvent;
 import com.fintech.authservice.event.AuthEventType;
 import com.fintech.authservice.event.PasswordChangedData;
-import com.fintech.authservice.event.UserChangedEmail;
+import com.fintech.authservice.event.UserChangedEmailData;
 import com.fintech.authservice.event.UserCreatedData;
 import com.fintech.authservice.event.UserDeletedData;
 import com.fintech.authservice.exception.AuthenticationException;
@@ -330,12 +330,12 @@ public class AuthServiceManager implements AuthService {
 
         userRepository.save(user);
 
-        AuthEvent<UserChangedEmail> event = AuthEvent.<UserChangedEmail>builder()
+        AuthEvent<UserChangedEmailData> event = AuthEvent.<UserChangedEmailData>builder()
             .eventId(UUID.randomUUID().toString())
             .eventType(AuthEventType.EMAIL_CHANGED)
             .timestamp(java.time.Instant.now())
             .source(serviceName)
-            .data(new UserChangedEmail(
+            .data(new UserChangedEmailData(
                 user.getId().toString(),
                 oldEmail,
                 user.getEmail(),
