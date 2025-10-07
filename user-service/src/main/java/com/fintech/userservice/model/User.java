@@ -23,7 +23,6 @@ public class User {
     private String nationalId;  // TC No (PII → encrypt/mask gerekebilir)
     @Enumerated(EnumType.STRING)
     private Role role;        // CUSTOMER / ADMIN
-    private String status;      //TODO : Auth servisteki metota gore yap ACTIVE / BLOCKED / CLOSED
     // profil tamamlama durumu
     @Enumerated(EnumType.STRING)
     private ProfileStatus profileStatus = ProfileStatus.INCOMPLETE;
@@ -32,6 +31,8 @@ public class User {
     private Instant updatedAt;
 
     private Instant deletedAt; // softdelete mantıgı ile silme
+
+    private Integer tokenVersion; // Auth Service'den gelir, burada read-only
 
 
     // Default constructor (JPA için)
@@ -46,11 +47,11 @@ public class User {
         this.phoneNumber = builder.phoneNumber;
         this.nationalId = builder.nationalId;
         this.role = builder.role;
-        this.status = builder.status;
         this.profileStatus = builder.profileStatus;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
         this.deletedAt = builder.deletedAt;
+        this.tokenVersion = builder.tokenVersion;
     }
 
     // Soft delete & restore
@@ -65,11 +66,11 @@ public class User {
     public String getPhoneNumber() { return phoneNumber; }
     public String getNationalId() { return nationalId; }
     public Role getRole() { return role; }
-    public String getStatus() { return status; }
     public ProfileStatus getProfileStatus() { return profileStatus; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }
+    public Integer getTokenVersion() { return tokenVersion;} 
 
     public void setId(UUID userId) {this.id = userId;}
     public void setFirstName(String firstName) {this.firstName = firstName;}
@@ -78,11 +79,13 @@ public class User {
     public void setPhoneNumber(String phoneNumber) {this.phoneNumber = phoneNumber;}
     public void setNationalId(String nationalId) {this.nationalId = nationalId;}
     public void setRole(Role role) {this.role = role;}
-    public void setStatus(String status) {this.status = status;}
     public void setProfileStatus(ProfileStatus profileStatus) {this.profileStatus = profileStatus;}
     public void setCreatedAt(Instant createdAt) {this.createdAt = createdAt;}
     public void setUpdatedAt(Instant updatedAt) {this.updatedAt = updatedAt;}
     public void setDeletedAt(Instant deletedAt) {this.deletedAt = deletedAt;}
+    public void setTokenVersion(Integer tokenVersion) {this.tokenVersion = tokenVersion;}
+   
+
 
     
 
@@ -99,11 +102,11 @@ public class User {
         private String phoneNumber;
         private String nationalId;  
         private Role role;        
-        private String status;      
         private ProfileStatus profileStatus = ProfileStatus.INCOMPLETE;
         private Instant createdAt;
         private Instant updatedAt;
         private Instant deletedAt;
+        private Integer tokenVersion;
 
         public Builder userId(UUID userId) { this.userId = userId; return this; }
         public Builder firstName(String firstName) { this.firstName = firstName; return this; }
@@ -112,11 +115,11 @@ public class User {
         public Builder phoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; return this; }
         public Builder nationalId(String nationalId) { this.nationalId = nationalId; return this; }
         public Builder role(Role role) { this.role = role; return this; }
-        public Builder status(String status) { this.status = status; return this; }
         public Builder profileStatus(ProfileStatus profileStatus) { this.profileStatus = profileStatus; return this; }
         public Builder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
         public Builder updatedAt(Instant updatedAt) { this.updatedAt = updatedAt; return this; }
         public Builder deletedAt(Instant deletedAt) { this.deletedAt = deletedAt; return this; }
+        public Builder tokenVersion(Integer tokenVersion) { this.tokenVersion = tokenVersion; return this;}
 
         public User build() {
             return new User(this);

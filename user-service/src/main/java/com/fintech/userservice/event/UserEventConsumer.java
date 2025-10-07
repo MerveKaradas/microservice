@@ -3,6 +3,7 @@ package com.fintech.userservice.event;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import com.fintech.userservice.service.abstracts.UserService;
+import com.fintech.userservice.event.AuthEventType;
 
 @Component
 public class UserEventConsumer {
@@ -13,9 +14,27 @@ public class UserEventConsumer {
         this.userService = userService;
     }
 
-    @KafkaListener(topics = "user-registered", groupId = "user-service")
-    public void consume(UserRegisteredEvent userRegisteredEvent) {
-        userService.createUserFromEvent(userRegisteredEvent);
+    @KafkaListener(topics = "auth-events", groupId = "user-service")
+    public void consume(AuthEvent<EventData> authEvent) {
+    
+        switch (authEvent.getEventType()) {
+            case USER_CREATED : 
+                userService.createUserFromEvent(authEvent);
+                break;
+            case EMAIL_CHANGED:
+                userService.changeEmailFromEvent(authEvent);
+                break;
+            case USER_DELETED:
+                userService.deleteUserFromEvent(authEvent);
+                break;
+            default:
+                System.out.println("Bilinmeyen event türü: " + authEvent.getEventType());
+                break;
+            
+
+            
+        }
+       
     }
 
     

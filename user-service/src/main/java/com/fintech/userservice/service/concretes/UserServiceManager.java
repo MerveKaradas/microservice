@@ -2,7 +2,11 @@ package com.fintech.userservice.service.concretes;
 
 import com.fintech.userservice.dto.request.CompleteProfileRequestDto;
 import com.fintech.userservice.dto.response.CompleteProfileResponseDto;
-import com.fintech.userservice.event.UserRegisteredEvent;
+import com.fintech.userservice.event.AuthEvent;
+import com.fintech.userservice.event.EventData;
+import com.fintech.userservice.event.UserChangedEmailData;
+import com.fintech.userservice.event.UserCreatedData;
+import com.fintech.userservice.event.UserDeletedData;
 import com.fintech.userservice.exception.ProfileAlreadyCompleted;
 import com.fintech.userservice.model.ProfileStatus;
 import com.fintech.userservice.model.User;
@@ -27,30 +31,42 @@ public class UserServiceManager implements UserService {
     }
 
 
-    public User createUserFromEvent(UserRegisteredEvent userRegisteredEvent) {
+    public User createUserFromEvent(AuthEvent<EventData> authEvent) {
+        
+        if ((authEvent.getData() instanceof UserCreatedData)) {
+            UserCreatedData eventData = (UserCreatedData)authEvent.getData();
+           
+            if (userRepository.existsById(eventData.getUserId())) {
+                log.info("{} idli kullanıcı zaten mevcut.", eventData.getUserId());
+                return userRepository.findById(eventData.getUserId().toString()).orElse(null);
 
-        UUID userId = UUID.fromString(userRegisteredEvent.getUserId());  // String → UUID
+            } 
+            
+            UUID userId = UUID.fromString(eventData.getUserId());
+            User user = User.builder()
+                        .userId(userId)
+                        .email(eventData.getEmail())
+                        .createdAt(eventData.getCreatedAt())
+                        .tokenVersion(eventData.getTokenVersion())
+                        .role(eventData.getRole())
+                        .profileStatus(ProfileStatus.INCOMPLETE)
+                        .build();
 
-        if (userRepository.existsById(userId.toString())){
-            log.info("{} idli kullanıcı zaten mevcut.", userId);
-            return userRepository.findById(userId.toString()).orElse(null);
-        }
+            log.info("Yeni kullanıcı oluşturuldu: {}", user);
+            return userRepository.save(user);
+           
+        } 
 
-        User user = User.builder()
-            .userId(userId)
-            .email(userRegisteredEvent.getEmail())
-            .createdAt(userRegisteredEvent.getCreatedAt())
-            .role(userRegisteredEvent.getRole())
-            .profileStatus(ProfileStatus.INCOMPLETE)
-            .build();
+        log.warn("Beklenmeyen event veri tipi: {}", authEvent.getData().getClass().getName());
+        return null;
+        
 
-        return userRepository.save(user);
     }
 
 
     public CompleteProfileResponseDto completeProfile(UUID id,CompleteProfileRequestDto request){
 
-        User user = userRepository.findById(id.toString())
+        User user = userRepository.findByIdAndDeletedAtIsNull(id)
                     .orElseThrow(() -> new IllegalArgumentException("Kullanici bulunamadi"));
 
         if(user.getProfileStatus() == ProfileStatus.COMPLETE){
@@ -61,7 +77,6 @@ public class UserServiceManager implements UserService {
         user.setLastName(request.lastName());
         user.setNationalId(request.nationalId());
         user.setPhoneNumber(request.phoneNumber());
-        user.setStatus(request.status());
         user.setProfileStatus(ProfileStatus.COMPLETE);
    
         userRepository.save(user);
@@ -69,15 +84,53 @@ public class UserServiceManager implements UserService {
         return new CompleteProfileResponseDto(
             user.getFirstName(), 
             user.getLastName(), 
-            user.getEmail(), 
             user.getPhoneNumber(), 
             user.getNationalId(), 
-            user.getRole(), 
-            user.getStatus(), 
             user.getProfileStatus(), 
-            user.getCreatedAt(), 
             user.getUpdatedAt());
     }
 
+   
+    public User changeEmailFromEvent(AuthEvent<EventData> authEvent) {
+
+        if(authEvent.getData() instanceof UserChangedEmailData) {
+
+            UserChangedEmailData eventData = (UserChangedEmailData) authEvent.getData();
+            
+            User user = userRepository.findByIdAndDeletedAtIsNull(UUID.fromString(eventData.getUserId()))
+                        .orElseThrow(() -> new IllegalArgumentException("Kullanici bulunamadi"));
+
+            user.setEmail(eventData.getNewEmail());
+            user.setTokenVersion(eventData.getTokenVersion());
+            userRepository.save(user);
+            log.info("Kullanıcı emaili güncellendi: {}", user);
+            return user;
+        }
+
+        log.warn("Beklenmeyen event veri tipi: {}", authEvent.getData().getClass().getName());
+        return null;
+
+    }
+
+
+    public User deleteUserFromEvent(AuthEvent<EventData> authEvent) {
+
+        if(authEvent.getData() instanceof UserDeletedData) {
+            UserDeletedData eventData = (UserDeletedData) authEvent.getData();
+
+            User user = userRepository.findByIdAndDeletedAtIsNull(UUID.fromString(eventData.getUserId()))
+                        .orElseThrow(() -> new IllegalArgumentException("Kullanici bulunamadi"));
+
+            user.softDelete();
+            user.setTokenVersion(eventData.getTokenVersion());
+
+            userRepository.save(user);
+            log.info("Kullanıcı silindi: {}", user);
+            return user;
+        }
+
+        log.warn("Beklenmeyen event veri tipi: {}", authEvent.getData().getClass().getName());
+        return null;
+    }
     
 }

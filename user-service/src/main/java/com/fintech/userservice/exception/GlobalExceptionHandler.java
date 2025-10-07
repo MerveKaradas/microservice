@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
-       //Metot seviyesinde validasyon hatalarını yakalar örneğin @Valid anotasyonu ile
+    //Metot seviyesinde validasyon hatalarını yakalar örneğin @Valid anotasyonu ile
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, Object> errors = new HashMap<>();

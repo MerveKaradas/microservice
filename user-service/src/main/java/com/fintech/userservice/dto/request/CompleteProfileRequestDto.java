@@ -4,6 +4,5 @@ public record CompleteProfileRequestDto(
     String firstName,
     String lastName,  
     String phoneNumber,
-    String nationalId,       
-    String status
+    String nationalId
 ) {}
