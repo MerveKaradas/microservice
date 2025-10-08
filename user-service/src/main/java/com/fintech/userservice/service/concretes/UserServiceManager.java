@@ -1,33 +1,42 @@
 package com.fintech.userservice.service.concretes;
 
 import com.fintech.userservice.dto.request.CompleteProfileRequestDto;
+import com.fintech.userservice.dto.request.RequestTelephoneNumberDto;
 import com.fintech.userservice.dto.response.CompleteProfileResponseDto;
 import com.fintech.userservice.event.AuthEvent;
 import com.fintech.userservice.event.EventData;
 import com.fintech.userservice.event.UserChangedEmailData;
 import com.fintech.userservice.event.UserCreatedData;
 import com.fintech.userservice.event.UserDeletedData;
+import com.fintech.userservice.event.UserProfileCompletedEvent;
 import com.fintech.userservice.exception.ProfileAlreadyCompleted;
+import com.fintech.userservice.exception.ProfileStatusInCompleteException;
 import com.fintech.userservice.model.ProfileStatus;
 import com.fintech.userservice.model.User;
 import com.fintech.userservice.repository.UserRepository;
 import com.fintech.userservice.service.abstracts.UserService;
+import com.fintech.userservice.security.JwtUtil;
 
+import java.time.Instant;
 import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserServiceManager implements UserService {
 
     private final UserRepository userRepository;
+    private final EventPublisher eventPublisher;
+    private final JwtUtil jwtUtil;
     private static final Logger log = LoggerFactory.getLogger(UserServiceManager.class);
     
 
-    public UserServiceManager(UserRepository userRepository) {
+    public UserServiceManager(UserRepository userRepository, EventPublisher eventPublisher, JwtUtil jwtUtil ) {
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
+        this.jwtUtil = jwtUtil;
     }
 
 
@@ -73,13 +82,18 @@ public class UserServiceManager implements UserService {
             throw new ProfileAlreadyCompleted("Profil bilgileri zaten önceden doldurulmuş"); 
         }
 
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setNationalId(request.nationalId());
-        user.setPhoneNumber(request.phoneNumber());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setNationalId(request.getNationalId());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setProfileStatus(ProfileStatus.COMPLETE);
+        user.setUpdatedAt(Instant.now());
    
         userRepository.save(user);
+
+        eventPublisher.publishUserProfileCompleted(
+            new UserProfileCompletedEvent(user.getId().toString(), user.getProfileStatus())
+        );
 
         return new CompleteProfileResponseDto(
             user.getFirstName(), 
@@ -102,6 +116,7 @@ public class UserServiceManager implements UserService {
 
             user.setEmail(eventData.getNewEmail());
             user.setTokenVersion(eventData.getTokenVersion());
+            user.setUpdatedAt(Instant.now());
             userRepository.save(user);
             log.info("Kullanıcı emaili güncellendi: {}", user);
             return user;
@@ -123,6 +138,7 @@ public class UserServiceManager implements UserService {
 
             user.softDelete();
             user.setTokenVersion(eventData.getTokenVersion());
+            user.setUpdatedAt(Instant.now());
 
             userRepository.save(user);
             log.info("Kullanıcı silindi: {}", user);
@@ -133,4 +149,33 @@ public class UserServiceManager implements UserService {
         return null;
     }
     
+    public void changeTelephoneNumber(String token, RequestTelephoneNumberDto newPhoneNumber) {
+
+        User user = userRepository.findByIdAndDeletedAtIsNull(UUID.fromString(jwtUtil.extractUsername(token)))
+                    .orElseThrow(() -> new IllegalArgumentException("Kullanici bulunamadi"));
+
+        if(user.getProfileStatus() == ProfileStatus.INCOMPLETE) {
+            log.error("Profil bilgileri tamamlanmadan telefon numarası değiştirilemez. Lütfen önce profil bilgilerinizi tamamlayınız.");
+            throw new ProfileStatusInCompleteException("Profil bilgileri tamamlanmadan diğer işlemlere devam edilemez. Lütfen devam etmeden önce profil bilgilerinizi tamamlayınız.");
+        }
+
+        if(userRepository.existsByPhoneNumber(newPhoneNumber.getNewPhoneNumber())) {
+            throw new IllegalArgumentException("Bu telefon numarası zaten başka bir kullanıcı tarafından kullanılıyor.");
+        } 
+
+        if(user.getPhoneNumber().equals(newPhoneNumber.getNewPhoneNumber())) {
+            throw new IllegalArgumentException("Yeni telefon numarası mevcut numara ile aynı olamaz.");
+        }
+        //TODO : İleride daha gelişmiş doğrulamalar eklenebilir. OTP vs.
+
+        user.setPhoneNumber(newPhoneNumber.getNewPhoneNumber());
+        user.setUpdatedAt(Instant.now());
+        user.setTokenVersion(user.getTokenVersion() + 1);
+
+        userRepository.save(user);
+        log.info("Kullanıcı telefon numarası güncellendi: {}", user);
+
+
+      
+    }
 }

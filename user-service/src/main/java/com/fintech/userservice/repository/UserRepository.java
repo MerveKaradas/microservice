@@ -10,4 +10,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     
     Optional<User> findByIdAndDeletedAtIsNull(UUID id);
 
+    boolean existsByPhoneNumber(String newPhoneNumber);
+
 }

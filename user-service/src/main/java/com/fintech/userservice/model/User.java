@@ -1,6 +1,7 @@
 package com.fintech.userservice.model;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -15,23 +16,24 @@ public class User {
 
     @Id
     @Column(columnDefinition = "uuid")
-    private UUID id;      // Auth Service’den gelen UUID
+    private UUID id; // Auth Service’den gelen UUID
     private String firstName;
     private String lastName;
-    private String email;       // Auth Service’den gelir, burada read-only
+    private String email;  // Auth Service’den gelir, burada read-only
     private String phoneNumber;
-    private String nationalId;  // TC No (PII → encrypt/mask gerekebilir)
+
+    @Convert(converter = com.fintech.userservice.security.TcNoAttributeConverter.class)
+    private String nationalId; 
+
     @Enumerated(EnumType.STRING)
-    private Role role;        // CUSTOMER / ADMIN
-    // profil tamamlama durumu
+    private Role role;        
+   
     @Enumerated(EnumType.STRING)
     private ProfileStatus profileStatus = ProfileStatus.INCOMPLETE;
  
     private Instant createdAt;
     private Instant updatedAt;
-
     private Instant deletedAt; // softdelete mantıgı ile silme
-
     private Integer tokenVersion; // Auth Service'den gelir, burada read-only
 
 
@@ -64,7 +66,14 @@ public class User {
     public String getLastName() { return lastName; }
     public String getEmail() { return email; }
     public String getPhoneNumber() { return phoneNumber; }
-    public String getNationalId() { return nationalId; }
+
+
+    public String getNationalId() {
+        if(nationalId != null && nationalId.length()==11) {
+            return nationalId.substring(0, 3) + "*****" + nationalId.substring(8);
+        }
+        return null;
+    }
     public Role getRole() { return role; }
     public ProfileStatus getProfileStatus() { return profileStatus; }
     public Instant getCreatedAt() { return createdAt; }
@@ -85,8 +94,6 @@ public class User {
     public void setDeletedAt(Instant deletedAt) {this.deletedAt = deletedAt;}
     public void setTokenVersion(Integer tokenVersion) {this.tokenVersion = tokenVersion;}
    
-
-
     
 
     // Builder

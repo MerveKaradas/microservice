@@ -39,3 +39,10 @@ spring:
   redis :
     host: ${SPRING_REDIS_HOST} # docker-composedan geliyor
     port: ${SPRING_REDIS_PORT:6379} # default 6379
+
+app:
+  encryption:
+    key: "qW6fK3vK2hZzXW7t0aD3o9nGpZf0WqDP6yYW2nD/vDk=" # Base64 
+
+jwt:
+  secret: ${JWT_SECRET}
