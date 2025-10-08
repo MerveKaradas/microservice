@@ -22,24 +22,27 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceManager implements UserService {
 
     private final UserRepository userRepository;
-    private final EventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
     private final JwtUtil jwtUtil;
     private static final Logger log = LoggerFactory.getLogger(UserServiceManager.class);
     
 
-    public UserServiceManager(UserRepository userRepository, EventPublisher eventPublisher, JwtUtil jwtUtil ) {
+    public UserServiceManager(UserRepository userRepository, ApplicationEventPublisher eventPublisher, JwtUtil jwtUtil ) {
         this.userRepository = userRepository;
         this.eventPublisher = eventPublisher;
         this.jwtUtil = jwtUtil;
     }
 
 
+    @Transactional
     public User createUserFromEvent(AuthEvent<EventData> authEvent) {
         
         if ((authEvent.getData() instanceof UserCreatedData)) {
@@ -73,6 +76,7 @@ public class UserServiceManager implements UserService {
     }
 
 
+    @Transactional
     public CompleteProfileResponseDto completeProfile(UUID id,CompleteProfileRequestDto request){
 
         User user = userRepository.findByIdAndDeletedAtIsNull(id)
@@ -91,10 +95,9 @@ public class UserServiceManager implements UserService {
    
         userRepository.save(user);
 
-        eventPublisher.publishUserProfileCompleted(
-            new UserProfileCompletedEvent(user.getId().toString(), user.getProfileStatus())
-        );
-
+        eventPublisher.publishEvent(
+            new UserProfileCompletedEvent(user.getId().toString(), user.getProfileStatus()));
+       
         return new CompleteProfileResponseDto(
             user.getFirstName(), 
             user.getLastName(), 
@@ -105,6 +108,7 @@ public class UserServiceManager implements UserService {
     }
 
    
+    @Transactional
     public User changeEmailFromEvent(AuthEvent<EventData> authEvent) {
 
         if(authEvent.getData() instanceof UserChangedEmailData) {
@@ -127,7 +131,7 @@ public class UserServiceManager implements UserService {
 
     }
 
-
+    @Transactional
     public User deleteUserFromEvent(AuthEvent<EventData> authEvent) {
 
         if(authEvent.getData() instanceof UserDeletedData) {
@@ -149,6 +153,7 @@ public class UserServiceManager implements UserService {
         return null;
     }
     
+    @Transactional
     public void changeTelephoneNumber(String token, RequestTelephoneNumberDto newPhoneNumber) {
 
         User user = userRepository.findByIdAndDeletedAtIsNull(UUID.fromString(jwtUtil.extractUsername(token)))

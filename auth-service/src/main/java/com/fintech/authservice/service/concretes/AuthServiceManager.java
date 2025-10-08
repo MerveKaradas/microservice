@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
@@ -37,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Map;
 import java.util.UUID;
@@ -50,7 +52,7 @@ public class AuthServiceManager implements AuthService {
     private final JwtBlacklistService jwtBlacklistService;
     private final StringRedisTemplate redisTemplate; 
     private long refreshTokenTtl;
-    private final EventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @Value("${spring.application.name}")
@@ -63,7 +65,7 @@ public class AuthServiceManager implements AuthService {
                                 JwtBlacklistService jwtBlacklistService, 
                                 StringRedisTemplate redisTemplate, 
                                 @Value("${jwt.refreshExpiration}")long refreshTokenTtl,
-                                EventPublisher eventPublisher) {
+                                ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -73,6 +75,7 @@ public class AuthServiceManager implements AuthService {
         this.eventPublisher = eventPublisher;
     }
 
+    @Transactional
     public UserResponseDto registerUser(UserRegisterRequestDto requestDto) {
 
         // Email kontrolü
@@ -105,7 +108,7 @@ public class AuthServiceManager implements AuthService {
             ))
             .build();    
 
-        eventPublisher.publish(event);
+        eventPublisher.publishEvent(event);
 
         return UserMapper.toDto(user);
     }
@@ -234,6 +237,7 @@ public class AuthServiceManager implements AuthService {
     }
 
 
+    @Transactional
     public void updatePassword(UUID userId, UserUpdatePasswordRequestDto requestDto) {
 
        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
@@ -261,12 +265,13 @@ public class AuthServiceManager implements AuthService {
             ))
             .build();    
 
-        eventPublisher.publish(event);
+        eventPublisher.publishEvent(event);
 
 
     }
 
 
+    @Transactional
     public void deleteUser(String currentAccessToken) {
         
         // Kimliği doğrulanmış kullanıcı
@@ -304,12 +309,13 @@ public class AuthServiceManager implements AuthService {
             ))
             .build();    
 
-        eventPublisher.publish(event);
+        eventPublisher.publishEvent(event);
 
 
     }
 
 
+    @Transactional
     public void updateEmail(UUID userId, UserUpdateEmailRequestDto requestDto) {
 
        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
@@ -344,7 +350,7 @@ public class AuthServiceManager implements AuthService {
             ))
             .build();    
 
-        eventPublisher.publish(event);
+        eventPublisher.publishEvent(event);
     }
 
 
