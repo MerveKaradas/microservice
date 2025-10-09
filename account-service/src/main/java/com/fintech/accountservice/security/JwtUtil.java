@@ -1,5 +1,7 @@
 package com.fintech.accountservice.security;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +24,13 @@ public class JwtUtil {
         return claims.getSubject();  // subject userId olarak ayarlandı(authservice'de)
     }
 
+    public UUID extractUserId(String token) {
+        try {
+            return UUID.fromString(extractUsername(token));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("JWT içeriğindeki userId geçersiz UUID formatında değil.");
+        }
+    }
     
     
 }

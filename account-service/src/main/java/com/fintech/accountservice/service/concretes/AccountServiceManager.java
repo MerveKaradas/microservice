@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
+import com.fintech.accountservice.dto.response.ResponseBalanceDto;
 import com.fintech.accountservice.event.AccountCreatedEvent;
 import com.fintech.accountservice.model.Account;
+import com.fintech.accountservice.model.AccountStatus;
 import com.fintech.accountservice.model.AccountType;
 import com.fintech.accountservice.model.Currency;
 import com.fintech.accountservice.model.OutboxEvent;
@@ -76,10 +78,10 @@ public class AccountServiceManager implements AccountService {
         
     }
 
-    @Transactional()
+    @Transactional
     public Account createAccount(String token,RequestCreateAccountDto request) {
 
-        UUID userId = UUID.fromString(jwtUtil.extractUsername(token));
+        UUID userId = jwtUtil.extractUserId(token);
         if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
             throw new IllegalStateException("Kullanıcı profili tamamlanmadan hesap açılamaz.");
         }
@@ -90,7 +92,7 @@ public class AccountServiceManager implements AccountService {
         } while(accountRepository.existsByAccountNumber(accountNumber));
 
         Account account = Account.builder()
-        .userId(request.getUserId())
+        .userId(userId)
         .currency(request.getCurrency() )
         .accountType(request.getAccountType())
         .accountNumber(accountNumber)
@@ -123,10 +125,72 @@ public class AccountServiceManager implements AccountService {
     }
 
 
+    @Transactional
+    public Account closeAccount(String token, UUID accountId){
 
+        UUID userId = jwtUtil.extractUserId(token);
+
+        if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
+            throw new IllegalStateException("Kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+        }
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadı!"));
+
+        if (!account.getUserId().equals(userId)) {
+            throw new SecurityException("Bu hesaba erişim yetkiniz yok!");
+        }
+
+        account.setAccountStatus(AccountStatus.CLOSED);
+        accountRepository.saveAndFlush(account);
+
+        return account;
+    }
 
     
+    public List<Account> getAccounts(String token){
+
+        UUID userId = jwtUtil.extractUserId(token);
+        if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
+            throw new IllegalStateException("Kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+        }
+
+        return accountRepository.findByUserId(userId);
+    }
+
+    public Account getAccount(String token,UUID accountId){
+
+        UUID userId = jwtUtil.extractUserId(token);
+        if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
+            throw new IllegalStateException("Kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+        }
+        
+        Account account = accountRepository.findById(accountId)
+                                .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadi!"));
+
+                
+        if (!account.getUserId().equals(userId)) {
+            throw new SecurityException("Bu hesaba erişim yetkiniz yok!");
+        }
+        return account;
+    }
 
 
+    public ResponseBalanceDto getBalance(String token,UUID accountId) {
+
+        UUID userId = jwtUtil.extractUserId(token);
+        if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
+            throw new IllegalStateException("Kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+        }
+        
+        Account account = accountRepository.findById(accountId)
+                                    .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadi!"));
+     
+        if (!account.getUserId().equals(userId)) {
+            throw new SecurityException("Bu hesaba erişim yetkiniz yok!");
+        }
+
+        return new ResponseBalanceDto(account.getBalance(), account.getAvailableBalance());
+    }
     
 }
