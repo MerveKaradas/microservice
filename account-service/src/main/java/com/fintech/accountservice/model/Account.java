@@ -6,9 +6,14 @@ import java.math.BigDecimal;
 
 import javax.persistence.*;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+
 
 @Table(name = "accounts")
 @Entity
+@Builder
+@AllArgsConstructor
 public class Account implements FundingSource{
 
     @Id
@@ -19,9 +24,6 @@ public class Account implements FundingSource{
     @Column(columnDefinition = "uuid", nullable = false)
     private UUID userId; // user-serviceden gelecek 
 
-    @Column(nullable = false)    
-    boolean isUserProfileCompleted;
-
     @Column(nullable = false,unique = true, length =16)
     private String accountNumber; // 16 haneli tekil hesap no
 
@@ -30,7 +32,7 @@ public class Account implements FundingSource{
     private AccountType accountType;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Currency currentType;
+    private Currency currency;
 
     @Column(nullable = false, precision = 19,scale=4)
     private BigDecimal availableBalance = BigDecimal.ZERO; // kullabılabilir bakiye
@@ -58,7 +60,7 @@ public class Account implements FundingSource{
         this.userId = userId;
         this.accountNumber = accountNumber;
         this.accountType = accountType;
-        this.currentType = currentType;
+        this.currency = currentType;
     }
 
    @PreUpdate
@@ -90,11 +92,11 @@ public class Account implements FundingSource{
     public void setAccountType(AccountType accountType) {
         this.accountType = accountType;
     }
-    public Currency getCurrentType() {
-        return currentType;
+    public Currency getCurrency() {
+        return currency;
     }
-    public void setCurrentType(Currency currentType) {
-        this.currentType = currentType;
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
     }
     public BigDecimal getAvailableBalance() {
         return availableBalance;
@@ -145,13 +147,6 @@ public class Account implements FundingSource{
         this.updatedAt = updatedAt;
     }
 
-    public boolean isUserProfileCompleted() {
-        return isUserProfileCompleted;
-    }
-
-    public void setUserProfileCompleted(boolean isUserProfileCompleted) {
-        this.isUserProfileCompleted = isUserProfileCompleted;
-    }
 
     
 

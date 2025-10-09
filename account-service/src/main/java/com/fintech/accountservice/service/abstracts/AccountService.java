@@ -8,7 +8,7 @@ import com.fintech.accountservice.model.Account;
 
 public interface AccountService {
 
-    ResponseCreateAccountDto createAccount(String token,RequestCreateAccountDto requestCreateAccountDto);
+    Account createAccount(String token,RequestCreateAccountDto requestCreateAccountDto);
 
     Account createDefaultAccount(UUID userId);
     

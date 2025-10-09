@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.accountservice.service.abstracts.AccountService;
 import com.fintech.accountservice.dto.response.*;
+import com.fintech.accountservice.model.Account;
 import com.fintech.accountservice.dto.request.*;
 
 @RestController
@@ -23,7 +24,7 @@ public class AccountController {
     }
 
     @PostMapping("/createAccount")
-    public ResponseEntity<ResponseCreateAccountDto> createAccount(
+    public ResponseEntity<Account> createAccount(
         @RequestHeader("Authorization") String token,
         @Valid RequestCreateAccountDto requestCreateAccountDto) {
         return ResponseEntity.ok(accountService.createAccount(token, requestCreateAccountDto));

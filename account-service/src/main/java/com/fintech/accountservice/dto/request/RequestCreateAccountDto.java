@@ -12,13 +12,13 @@ public class RequestCreateAccountDto implements Serializable {
     
     private UUID userId;
     private AccountType accountType;
-    private Currency currentType;
+    private Currency currency;
 
     
-    public RequestCreateAccountDto(UUID userId, AccountType accountType, Currency currentType) {
+    public RequestCreateAccountDto(UUID userId, AccountType accountType, Currency currency) {
         this.userId = userId;
         this.accountType = accountType;
-        this.currentType = currentType;
+        this.currency = currency;
     }
 
     public static long getSerialversionuid() {
@@ -30,8 +30,8 @@ public class RequestCreateAccountDto implements Serializable {
     public AccountType getAccountType() {
         return accountType;
     }
-    public Currency getCurrentType() {
-        return currentType;
+    public Currency getCurrency() {
+        return currency;
     }
 
     
