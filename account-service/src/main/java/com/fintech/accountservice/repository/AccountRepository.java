@@ -8,5 +8,6 @@ import com.fintech.accountservice.model.Account;
 public interface AccountRepository extends JpaRepository<Account, UUID> {
     List<Account> findByUserId(UUID userId);
     boolean existsByUserIdAndIsPrimary(UUID userId, boolean isPrimary);
+    boolean existsByAccountNumber(String accountNumber);
     
 }

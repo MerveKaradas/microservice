@@ -1,6 +1,7 @@
 package com.fintech.accountservice.service.concretes;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import javax.transaction.Transactional;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
-import com.fintech.accountservice.dto.response.ResponseCreateAccountDto;
 import com.fintech.accountservice.event.AccountCreatedEvent;
 import com.fintech.accountservice.model.Account;
 import com.fintech.accountservice.model.AccountType;
@@ -57,18 +57,22 @@ public class AccountServiceManager implements AccountService {
             }
         }
 
+        String accountNumber;
+        do {
+            accountNumber = generateAccountNumber(userId);
+        } while(accountRepository.existsByAccountNumber(accountNumber));
+
         Account account = new Account();      
         account.setUserId(userId);
         account.setAccountType(AccountType.CURRENT); // vadesiz
         account.setCurrency(Currency.TRY);
         account.setPrimary(true);
+        account.setAccountNumber(accountNumber);
         log.info("Kullanici için default hesap oluşturuldu! userId : {}", userId);
 
         accountRepository.save(account);
        
         return account;
-
-
         
     }
 
@@ -80,10 +84,16 @@ public class AccountServiceManager implements AccountService {
             throw new IllegalStateException("Kullanıcı profili tamamlanmadan hesap açılamaz.");
         }
 
+        String accountNumber;
+        do {
+            accountNumber = generateAccountNumber(userId);
+        } while(accountRepository.existsByAccountNumber(accountNumber));
+
         Account account = Account.builder()
         .userId(request.getUserId())
         .currency(request.getCurrency() )
         .accountType(request.getAccountType())
+        .accountNumber(accountNumber)
         .build();
         
         accountRepository.save(account);
@@ -104,7 +114,16 @@ public class AccountServiceManager implements AccountService {
         return account;
     }
 
-    
+    public static String generateAccountNumber(UUID userId) {
+        String userPart = userId.toString().replaceAll("-", "").substring(0, 6); // 6 hane
+        long timestamp = System.currentTimeMillis() % 1000000000; // 9 hane
+        Random random = new Random();
+        int randDigit = random.nextInt(10); // 1 hane
+        return userPart + timestamp + randDigit;
+    }
+
+
+
 
     
 
