@@ -1,0 +1,12 @@
+com\fintech\common\event\accountEvent\AccountCreatedEvent.class
+com\fintech\common\event\AuthEventType.class
+com\fintech\common\event\EventData.class
+com\fintech\common\event\UserProfileCompletedEvent.class
+com\fintech\common\event\UserChangedEmailData.class
+com\fintech\common\event\UserDeletedData.class
+com\fintech\common\event\PasswordChangedData.class
+com\fintech\common\event\AuthEvent$Builder.class
+com\fintech\common\event\AuthEvent.class
+com\fintech\common\event\UserCreatedData.class
+com\fintech\common\event\ProfileStatus.class
+com\fintech\common\event\Role.class
