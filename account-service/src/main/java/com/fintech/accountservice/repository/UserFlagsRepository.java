@@ -16,7 +16,7 @@ public interface UserFlagsRepository extends JpaRepository<UserFlag, UUID> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE UserFlag u SET u.profileComplete = true WHERE u.userId = :userId")
+    @Query(value = "UPDATE user_flags SET profile_complete = true WHERE user_id = :userId", nativeQuery = true)
     void markProfileComplete(UUID userId);
 
     boolean existsByUserIdAndProfileCompleteTrue(UUID userId);

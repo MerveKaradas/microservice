@@ -11,10 +11,10 @@ public class UserFlag {
     @Column(columnDefinition = "uuid")
     private UUID userId;
 
-    @Column(nullable = false)
+    @Column(name="profile_complete",nullable = false)
     private boolean profileComplete = false;
 
-    
+
     public UUID getUserId() {
          return userId;
     }

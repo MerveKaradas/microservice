@@ -14,7 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
-import com.fintech.accountservice.event.AccountCreatedEvent;
+import com.fintech.common.event.accountEvent.AccountCreatedEvent;
 import com.fintech.accountservice.model.Account;
 import com.fintech.accountservice.model.AccountStatus;
 import com.fintech.accountservice.model.AccountType;
@@ -81,6 +81,8 @@ public class AccountServiceManager implements AccountService {
     @Transactional
     public Account createAccount(String token,RequestCreateAccountDto request) {
 
+        log.info("Gelen request : accounttype " + request.getAccountType() + " currency : " + request.getCurrency());
+
         UUID userId = jwtUtil.extractUserId(token);
         if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
             throw new IllegalStateException("Kullanıcı profili tamamlanmadan hesap açılamaz.");
@@ -92,11 +94,11 @@ public class AccountServiceManager implements AccountService {
         } while(accountRepository.existsByAccountNumber(accountNumber));
 
         Account account = Account.builder()
-        .userId(userId)
-        .currency(request.getCurrency() )
-        .accountType(request.getAccountType())
-        .accountNumber(accountNumber)
-        .build();
+                        .userId(userId)
+                        .accountNumber(accountNumber)
+                        .accountType(request.getAccountType())
+                        .currency(request.getCurrency())
+                        .build();
         
         accountRepository.save(account);
 
@@ -143,6 +145,20 @@ public class AccountServiceManager implements AccountService {
 
         account.setAccountStatus(AccountStatus.CLOSED);
         accountRepository.saveAndFlush(account);
+
+        OutboxEvent outboxEvent = new OutboxEvent();
+        outboxEvent.setTopic("account-closed");
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            outboxEvent.setPayload(mapper.writeValueAsString(
+                    new AccountCreatedEvent(account.getId().toString(), account.getUserId().toString())
+            ));
+        } catch (JsonProcessingException e) {
+            log.warn("Hata : {} " , e.getMessage());
+            e.printStackTrace();
+        }
+        outboxRepository.save(outboxEvent);
+
 
         return account;
     }

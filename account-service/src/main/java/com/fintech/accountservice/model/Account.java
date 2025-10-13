@@ -6,9 +6,10 @@ import java.math.BigDecimal;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-
 
 @Table(name = "accounts")
 @Entity
@@ -17,8 +18,12 @@ import lombok.Builder;
 public class Account implements FundingSource{
 
     @Id
-    @Column(columnDefinition = "uuid") 
-    @GeneratedValue(strategy = GenerationType.AUTO) 
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+        name = "UUID",
+        strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "uuid")
     private UUID id;
 
     @Column(columnDefinition = "uuid", nullable = false)
@@ -30,26 +35,34 @@ public class Account implements FundingSource{
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AccountType accountType;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Currency currency;
 
     @Column(nullable = false, precision = 19,scale=4)
+    @Builder.Default // Builder'ın default bilgileri alması için
     private BigDecimal availableBalance = BigDecimal.ZERO; // kullabılabilir bakiye
+
     @Column(nullable= false, precision= 19,scale=4)
+     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @Builder.Default
     @Column(precision = 5, scale = 2) // faiz oranı 99.99 genellikle geçmez
     private BigDecimal interestRate = BigDecimal.ZERO;  // faiz oranı default olarak 0 yapıyoruz vadesiz hesaplarda kullanılabilir olacak
     private Instant maturityDate; // vadeli hesaplar için vade tarihi
 
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private AccountStatus accountStatus = AccountStatus.ACTIVE; 
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean isPrimary = false; // kullanıcının birincil hesap kontrolü için
 
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private Instant createdAt = Instant.now(); 
     private Instant updatedAt;
 
@@ -146,6 +159,8 @@ public class Account implements FundingSource{
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    
 
 
     

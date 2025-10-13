@@ -10,8 +10,6 @@ public class ResponseBalanceDto implements Serializable {
     private BigDecimal balance;
     private BigDecimal availableBalance;
 
-
-    
     public ResponseBalanceDto(BigDecimal balance, BigDecimal availableBalance) {
         this.balance = balance;
         this.availableBalance = availableBalance;
@@ -28,9 +26,5 @@ public class ResponseBalanceDto implements Serializable {
     public BigDecimal getAvailableBalance() {
         return availableBalance;
     }
-    
-
-
-
-    
+  
 }

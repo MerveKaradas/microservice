@@ -1,7 +1,8 @@
 package com.fintech.accountservice.dto.request;
 
 import java.io.Serializable;
-import java.util.UUID;
+
+import javax.validation.constraints.NotBlank;
 
 import com.fintech.accountservice.model.AccountType;
 import com.fintech.accountservice.model.Currency;
@@ -10,13 +11,16 @@ public class RequestCreateAccountDto implements Serializable {
 
     public final static long serialVersionUID = 2001L;
     
-    private UUID userId;
+    @NotBlank(message = "Hesap türü boş olamaz!")
     private AccountType accountType;
-    private Currency currency;
 
-    
-    public RequestCreateAccountDto(UUID userId, AccountType accountType, Currency currency) {
-        this.userId = userId;
+    @NotBlank(message = "Para birimi boş olamaz!")
+    private Currency currency;
+   
+    public RequestCreateAccountDto() {
+    }
+
+    public RequestCreateAccountDto(AccountType accountType, Currency currency) {
         this.accountType = accountType;
         this.currency = currency;
     }
@@ -24,15 +28,23 @@ public class RequestCreateAccountDto implements Serializable {
     public static long getSerialversionuid() {
         return serialVersionUID;
     }
-    public UUID getUserId() {
-        return userId;
-    }
+    
     public AccountType getAccountType() {
         return accountType;
     }
     public Currency getCurrency() {
         return currency;
     }
+
+    public void setAccountType(AccountType accountType) {
+        this.accountType = accountType;
+    }
+
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
+    }
+
+    
 
     
     

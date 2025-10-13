@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,7 +32,7 @@ public class AccountController {
     @PostMapping("/createAccount")
     public ResponseEntity<Account> createAccount(
         @RequestHeader("Authorization") String token,
-        @Valid RequestCreateAccountDto requestCreateAccountDto) {
+        @Valid @RequestBody RequestCreateAccountDto requestCreateAccountDto) {
         return ResponseEntity.ok(accountService.createAccount(token, requestCreateAccountDto));
     }
 
@@ -40,19 +41,19 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAccounts(token));
     }
 
-    @GetMapping("/account/{accountId}")
+    @GetMapping("/{accountId}")
     public ResponseEntity<Account> getAccount(@PathVariable("accountId") UUID accountId,
                                               @RequestHeader("Authorization") String token){
         return ResponseEntity.ok(accountService.getAccount(token,accountId));
     }
 
-    @GetMapping("/accounts/{accountId}/balance")
+    @GetMapping("/{accountId}/balance")
     public ResponseEntity<ResponseBalanceDto> getBalance(@PathVariable("accountId") UUID accountId,
                                             @RequestHeader("Authorization") String token) {
         return ResponseEntity.ok(accountService.getBalance(token, accountId));
     }
 
-    @PostMapping("/accounts/{accountId}/close")
+    @PostMapping("/{accountId}/close")
     public ResponseEntity<Account> closeAccount(@PathVariable("accountId") UUID accountId,
                                                 @RequestHeader("Authorization") String token) {
         return ResponseEntity.ok(accountService.closeAccount(token, accountId));

@@ -1,0 +1,47 @@
+spring:
+  application:
+    name : account-service
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/accountdb
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers : kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: account-service
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.json.trusted.packages: com.fintech.common.event
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+      
+      
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://eureka-server:8761/eureka
+      register-with-eureka: true
+      fetch-registry: true
+      registry-fetch-interval-seconds: 10
+
+  redis:
+    host: ${SPRING_REDIS_HOST} # docker-composedan geliyor
+    port: ${SPRING_REDIS_PORT:6379} # default 6379
+
+
+jwt:
+  secret: ${JWT_SECRET}
