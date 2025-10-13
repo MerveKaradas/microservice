@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.UUID;
+import com.fintech.common.event.Role;
 
 @Entity
 @Table(name = "users")
@@ -39,7 +40,7 @@ public class User implements UserDetails {
     // Kullanıcı hesap durumu
     @CreationTimestamp
     @Column(name = "created_at" ,nullable = false, updatable = false)
-    private Instant createdAt;
+    private Instant createdAt = Instant.now();
 
     @Column(name = "deleted_at")
     private Instant deletedAt = null; // softdelete mantıgı ile silme

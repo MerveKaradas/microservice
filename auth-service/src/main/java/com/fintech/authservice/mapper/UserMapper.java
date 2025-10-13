@@ -2,7 +2,7 @@ package com.fintech.authservice.mapper;
 
 import com.fintech.authservice.dto.request.UserRegisterRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
-import com.fintech.authservice.model.Role;
+import com.fintech.common.event.Role;
 import com.fintech.authservice.model.User;
 
 public class UserMapper {

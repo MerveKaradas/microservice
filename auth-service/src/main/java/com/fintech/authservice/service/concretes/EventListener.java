@@ -4,17 +4,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.fintech.authservice.event.AuthEvent;
-import com.fintech.authservice.event.EventData;
+import com.fintech.common.event.AuthEvent;
+import com.fintech.common.event.EventData;
 
 import org.springframework.kafka.core.KafkaTemplate;
 
 @Component
 public class EventListener {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, AuthEvent<?>> kafkaTemplate;
 
-    public EventListener(KafkaTemplate<String, Object> kafkaTemplate) {
+    public EventListener(KafkaTemplate<String, AuthEvent<?>> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 

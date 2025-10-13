@@ -1,6 +1,6 @@
 package com.fintech.authservice.dto.response;
 
-import com.fintech.authservice.model.Role;
+import com.fintech.common.event.Role;
 import java.io.Serializable;
 import java.util.UUID;
 

@@ -16,12 +16,12 @@ import com.fintech.authservice.dto.request.UserUpdateEmailRequestDto;
 import com.fintech.authservice.dto.request.UserUpdatePasswordRequestDto;
 import com.fintech.authservice.dto.response.UserResponseDto;
 import com.fintech.authservice.dto.response.UserTokenStatusResponseDto;
-import com.fintech.authservice.event.AuthEvent;
-import com.fintech.authservice.event.AuthEventType;
-import com.fintech.authservice.event.PasswordChangedData;
-import com.fintech.authservice.event.UserChangedEmailData;
-import com.fintech.authservice.event.UserCreatedData;
-import com.fintech.authservice.event.UserDeletedData;
+import com.fintech.common.event.AuthEvent;
+import com.fintech.common.event.AuthEventType;
+import com.fintech.common.event.PasswordChangedData;
+import com.fintech.common.event.UserChangedEmailData;
+import com.fintech.common.event.UserCreatedData;
+import com.fintech.common.event.UserDeletedData;
 import com.fintech.authservice.exception.AuthenticationException;
 import com.fintech.authservice.exception.GlobalExceptionHandler;
 import com.fintech.authservice.exception.UserAlreadyExistsException;
@@ -100,12 +100,7 @@ public class AuthServiceManager implements AuthService {
             .timestamp(java.time.Instant.now())
             .source(serviceName)
             .data(new UserCreatedData(
-                user.getId().toString(),
-                user.getEmail(),
-                user.getRole(),
-                user.getCreatedAt(),
-                user.getTokenVersion()
-            ))
+                user.getId().toString(), user.getEmail(), user.getRole(), user.getCreatedAt(), user.getTokenVersion()))
             .build();    
 
         eventPublisher.publishEvent(event);
