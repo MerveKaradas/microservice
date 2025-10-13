@@ -148,6 +148,13 @@
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
 
+		<!-- Kendi oluşturduğumuz common-events-->
+		<dependency>
+			<groupId>com.fintech</groupId>
+			<artifactId>common-events</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+
 
 	</dependencies>
 	
