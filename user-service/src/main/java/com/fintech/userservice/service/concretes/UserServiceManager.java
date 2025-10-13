@@ -3,15 +3,15 @@ package com.fintech.userservice.service.concretes;
 import com.fintech.userservice.dto.request.CompleteProfileRequestDto;
 import com.fintech.userservice.dto.request.RequestTelephoneNumberDto;
 import com.fintech.userservice.dto.response.CompleteProfileResponseDto;
-import com.fintech.userservice.event.AuthEvent;
-import com.fintech.userservice.event.EventData;
-import com.fintech.userservice.event.UserChangedEmailData;
-import com.fintech.userservice.event.UserCreatedData;
-import com.fintech.userservice.event.UserDeletedData;
-import com.fintech.userservice.event.UserProfileCompletedEvent;
+import com.fintech.common.event.AuthEvent;
+import com.fintech.common.event.EventData;
+import com.fintech.common.event.UserChangedEmailData;
+import com.fintech.common.event.UserCreatedData;
+import com.fintech.common.event.UserDeletedData;
+import com.fintech.common.event.UserProfileCompletedEvent;
 import com.fintech.userservice.exception.ProfileAlreadyCompleted;
 import com.fintech.userservice.exception.ProfileStatusInCompleteException;
-import com.fintech.userservice.model.ProfileStatus;
+import com.fintech.common.event.ProfileStatus;
 import com.fintech.userservice.model.User;
 import com.fintech.userservice.repository.UserRepository;
 import com.fintech.userservice.service.abstracts.UserService;
@@ -45,16 +45,17 @@ public class UserServiceManager implements UserService {
     @Transactional
     public User createUserFromEvent(AuthEvent<EventData> authEvent) {
         
+
         if ((authEvent.getData() instanceof UserCreatedData)) {
             UserCreatedData eventData = (UserCreatedData)authEvent.getData();
            
-            if (userRepository.existsById(eventData.getUserId())) {
+            UUID userId = UUID.fromString(eventData.getUserId());
+            if (userRepository.existsById(userId)) {
                 log.info("{} idli kullanıcı zaten mevcut.", eventData.getUserId());
-                return userRepository.findById(eventData.getUserId().toString()).orElse(null);
+                return userRepository.findById(userId).orElse(null);
 
             } 
             
-            UUID userId = UUID.fromString(eventData.getUserId());
             User user = User.builder()
                         .userId(userId)
                         .email(eventData.getEmail())

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.fintech.userservice.event.UserProfileCompletedEvent;
+import com.fintech.common.event.UserProfileCompletedEvent;
 
 @Component
 public class EventListener {
@@ -18,7 +18,7 @@ public class EventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publishUserProfileCompleted(UserProfileCompletedEvent event) {
-        kafkaTemplate.send("user-profileCompleted", event.userId(),event);
+        kafkaTemplate.send("user-profileCompleted", event.getUserId(),event);
     }
 
 

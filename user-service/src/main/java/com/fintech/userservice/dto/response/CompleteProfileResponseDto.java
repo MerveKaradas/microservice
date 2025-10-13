@@ -2,7 +2,7 @@ package com.fintech.userservice.dto.response;
 
 import java.time.Instant;
 
-import com.fintech.userservice.model.ProfileStatus;
+import com.fintech.common.event.ProfileStatus;
 
 public record CompleteProfileResponseDto(
     String firstName,

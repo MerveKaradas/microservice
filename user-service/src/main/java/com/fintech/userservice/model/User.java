@@ -6,6 +6,10 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
+
+import com.fintech.common.event.Role;
+import com.fintech.common.event.ProfileStatus;
+
 import javax.persistence.Id;
 import java.util.UUID;
 import java.time.Instant;

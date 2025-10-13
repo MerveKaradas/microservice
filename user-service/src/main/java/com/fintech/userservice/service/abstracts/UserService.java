@@ -5,8 +5,8 @@ import java.util.UUID;
 import com.fintech.userservice.dto.request.CompleteProfileRequestDto;
 import com.fintech.userservice.dto.request.RequestTelephoneNumberDto;
 import com.fintech.userservice.dto.response.CompleteProfileResponseDto;
-import com.fintech.userservice.event.AuthEvent;
-import com.fintech.userservice.event.EventData;
+import com.fintech.common.event.AuthEvent;
+import com.fintech.common.event.EventData;
 import com.fintech.userservice.model.User;
 
 public interface UserService {
