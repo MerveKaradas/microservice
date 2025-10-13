@@ -22,6 +22,13 @@ public class FallbackController {
               .body("User Service şuan kullanılamıyor. Lütfen daha sonra tekrar deneyiniz.");
     }
 
+    //TODO : Gelişmiş fallback mekanizması oluşturulacak 
+    @RequestMapping("/fallback/account")
+    public ResponseEntity<String> accountServiceFallback() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+              .body("Account Service şuan kullanılamıyor. Lütfen daha sonra tekrar deneyiniz.");
+    }
+
 
     
 }
