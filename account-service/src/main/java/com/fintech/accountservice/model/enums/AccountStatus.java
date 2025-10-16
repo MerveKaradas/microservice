@@ -1,4 +1,4 @@
-package com.fintech.accountservice.model;
+package com.fintech.accountservice.model.enums;
 
 public enum AccountStatus {
     ACTIVE,

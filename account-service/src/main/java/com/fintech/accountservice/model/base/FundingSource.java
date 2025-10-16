@@ -1,6 +1,11 @@
-package com.fintech.accountservice.model;
+package com.fintech.accountservice.model.base;
 
 import java.util.UUID;
+
+import com.fintech.accountservice.model.enums.AccountStatus;
+import com.fintech.accountservice.model.enums.AccountType;
+import com.fintech.accountservice.model.enums.Currency;
+
 import java.math.BigDecimal;
 
 public interface FundingSource {
