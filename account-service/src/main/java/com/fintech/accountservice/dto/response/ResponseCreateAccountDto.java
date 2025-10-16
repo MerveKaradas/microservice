@@ -5,8 +5,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.fintech.accountservice.model.AccountType;
-import com.fintech.accountservice.model.Currency;
+import com.fintech.accountservice.model.enums.AccountType;
+import com.fintech.accountservice.model.enums.Currency;
 
 public class ResponseCreateAccountDto implements Serializable{
 

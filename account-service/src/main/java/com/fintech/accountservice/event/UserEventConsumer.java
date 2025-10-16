@@ -11,10 +11,9 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.fintech.accountservice.model.Account;
-import com.fintech.accountservice.model.OutboxEvent;
-import com.fintech.accountservice.model.UserFlag;
+import com.fintech.accountservice.model.base.Account;
+import com.fintech.accountservice.model.entity.OutboxEvent;
+import com.fintech.accountservice.model.entity.UserFlag;
 import com.fintech.accountservice.repository.OutboxRepository;
 import com.fintech.accountservice.repository.UserFlagsRepository;
 import com.fintech.accountservice.service.abstracts.AccountService;

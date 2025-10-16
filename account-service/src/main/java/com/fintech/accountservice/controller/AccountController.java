@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.accountservice.service.abstracts.AccountService;
-import com.fintech.accountservice.model.Account;
 import com.fintech.accountservice.dto.request.*;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
+import com.fintech.accountservice.model.base.Account;
 
 @RestController
 @RequestMapping("/api/accounts")

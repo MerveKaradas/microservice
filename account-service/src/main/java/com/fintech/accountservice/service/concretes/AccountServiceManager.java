@@ -15,11 +15,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
 import com.fintech.common.event.accountEvent.AccountCreatedEvent;
-import com.fintech.accountservice.model.Account;
-import com.fintech.accountservice.model.AccountStatus;
-import com.fintech.accountservice.model.AccountType;
-import com.fintech.accountservice.model.Currency;
-import com.fintech.accountservice.model.OutboxEvent;
+import com.fintech.accountservice.model.base.Account;
+import com.fintech.accountservice.model.entity.OutboxEvent;
+import com.fintech.accountservice.model.enums.AccountStatus;
+import com.fintech.accountservice.model.enums.AccountType;
+import com.fintech.accountservice.model.enums.Currency;
 import com.fintech.accountservice.repository.AccountRepository;
 import com.fintech.accountservice.repository.OutboxRepository;
 import com.fintech.accountservice.repository.UserFlagsRepository;
@@ -31,6 +31,7 @@ import com.fintech.accountservice.service.abstracts.AccountService;
 public class AccountServiceManager implements AccountService {
 
     private final AccountRepository accountRepository;
+    private final AccountFactory accountFactory;
     private final UserFlagsRepository userFlagsRepository;
     private final OutboxRepository outboxRepository;
     private final JwtUtil jwtUtil;
@@ -39,8 +40,9 @@ public class AccountServiceManager implements AccountService {
     public AccountServiceManager(AccountRepository accountRepository, 
                                 UserFlagsRepository userFlagsRepository, 
                                 JwtUtil jwtUtil, 
-                                OutboxRepository outboxRepository) {
+                                OutboxRepository outboxRepository, AccountFactory accountFactory) {
         this.accountRepository = accountRepository;
+        this.accountFactory = accountFactory;
         this.userFlagsRepository = userFlagsRepository;
         this.outboxRepository = outboxRepository;
         this.jwtUtil = jwtUtil;
@@ -64,15 +66,26 @@ public class AccountServiceManager implements AccountService {
             accountNumber = generateAccountNumber(userId);
         } while(accountRepository.existsByAccountNumber(accountNumber));
 
-        Account account = new Account();      
-        account.setUserId(userId);
-        account.setAccountType(AccountType.CURRENT); // vadesiz
-        account.setCurrency(Currency.TRY);
+
+        Account account = accountFactory.createAccount(userId, accountNumber, AccountType.CURRENT, Currency.TRY);
         account.setPrimary(true);
-        account.setAccountNumber(accountNumber);
         log.info("Kullanici için default hesap oluşturuldu! userId : {}", userId);
 
         accountRepository.save(account);
+
+
+        OutboxEvent outboxEvent = new OutboxEvent();
+        outboxEvent.setTopic("account-created");
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            outboxEvent.setPayload(mapper.writeValueAsString(
+                    new AccountCreatedEvent(account.getId().toString(), account.getUserId().toString())
+            ));
+        } catch (JsonProcessingException e) {
+            log.warn("Hata : {} " , e.getMessage());
+            e.printStackTrace();
+        }
+        outboxRepository.save(outboxEvent);
        
         return account;
         
@@ -93,13 +106,7 @@ public class AccountServiceManager implements AccountService {
             accountNumber = generateAccountNumber(userId);
         } while(accountRepository.existsByAccountNumber(accountNumber));
 
-        Account account = Account.builder()
-                        .userId(userId)
-                        .accountNumber(accountNumber)
-                        .accountType(request.getAccountType())
-                        .currency(request.getCurrency())
-                        .build();
-        
+        Account account = accountFactory.createAccount(userId, accountNumber, AccountType.valueOf(request.getAccountType()), Currency.valueOf(request.getCurrency()));
         accountRepository.save(account);
 
         OutboxEvent outboxEvent = new OutboxEvent();

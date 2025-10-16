@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.fintech.accountservice.model.UserFlag;
+import com.fintech.accountservice.model.entity.UserFlag;
 
 import java.util.UUID;
 

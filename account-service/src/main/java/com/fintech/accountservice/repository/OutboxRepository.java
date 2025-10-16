@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.fintech.accountservice.model.OutboxEvent;
+import com.fintech.accountservice.model.entity.OutboxEvent;
 
 public interface OutboxRepository extends JpaRepository<OutboxEvent, UUID> {
      

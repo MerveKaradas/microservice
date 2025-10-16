@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
-import com.fintech.accountservice.model.Account;
+import com.fintech.accountservice.model.base.Account;
 
 public interface AccountService {
 

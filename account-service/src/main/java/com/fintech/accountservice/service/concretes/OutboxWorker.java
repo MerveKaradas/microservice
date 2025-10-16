@@ -10,7 +10,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.fintech.accountservice.model.OutboxEvent;
+import com.fintech.accountservice.model.entity.OutboxEvent;
 import com.fintech.accountservice.repository.OutboxRepository;
 
 @Service
