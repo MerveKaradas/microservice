@@ -4,8 +4,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.fintech.common.event.AuthEvent;
-import com.fintech.common.event.EventData;
+import com.fintech.common.event.auth.AuthEvent;
+import com.fintech.common.event.auth.EventData;
 
 import org.springframework.kafka.core.KafkaTemplate;
 

@@ -11,8 +11,10 @@ import org.hibernate.annotations.GenericGenerator;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fintech.common.event.auth.Role;
+
 import java.util.UUID;
-import com.fintech.common.event.Role;
 
 @Entity
 @Table(name = "users")

@@ -2,11 +2,11 @@ package com.fintech.userservice.service.abstracts;
 
 import java.util.UUID;
 
+import com.fintech.common.event.auth.AuthEvent;
+import com.fintech.common.event.auth.EventData;
 import com.fintech.userservice.dto.request.CompleteProfileRequestDto;
 import com.fintech.userservice.dto.request.RequestTelephoneNumberDto;
 import com.fintech.userservice.dto.response.CompleteProfileResponseDto;
-import com.fintech.common.event.AuthEvent;
-import com.fintech.common.event.EventData;
 import com.fintech.userservice.model.User;
 
 public interface UserService {

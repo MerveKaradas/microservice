@@ -3,8 +3,8 @@ package com.fintech.userservice.event;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.fintech.common.event.AuthEvent;
-import com.fintech.common.event.EventData;
+import com.fintech.common.event.auth.AuthEvent;
+import com.fintech.common.event.auth.EventData;
 import com.fintech.userservice.service.abstracts.UserService;
 
 @Component

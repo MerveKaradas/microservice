@@ -7,8 +7,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
-import com.fintech.common.event.Role;
-import com.fintech.common.event.ProfileStatus;
+import com.fintech.common.event.auth.Role;
+import com.fintech.common.event.user.ProfileStatus;
 
 import javax.persistence.Id;
 import java.util.UUID;

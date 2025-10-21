@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.fintech.common.event.UserProfileCompletedEvent;
+import com.fintech.common.event.user.UserProfileCompletedEvent;
 
 @Component
 public class EventListener {
