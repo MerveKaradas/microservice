@@ -63,6 +63,22 @@ spring:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/account  
 
+        - id: transaction_route
+          uri: lb://transaction-service
+          predicates:
+            - Path=/api/transactions/**
+          filters:
+           - name: Retry
+             args:
+              retries: 2
+              statuses: 
+                - BAD_GATEWAY
+                - GATEWAY_TIMEOUT
+           - name: CircuitBreaker
+             args:
+                name: transactionServiceCircuitBreaker
+                fallbackUri: forward:/fallback/transaction  
+
              
 
 
@@ -97,6 +113,12 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
       accountServiceCircuitBreaker:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      transactionServiceCircuitBreaker:
         slidingWindowSize: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
