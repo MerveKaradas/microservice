@@ -77,6 +77,37 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
 
+  ledger-service:
+    build: ./ledger-service
+    container_name: ledger-service
+    ports:
+      - "8084:8080"
+    depends_on:
+      - postgres
+      - eureka-server
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ledgerdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+
+  transaction-service:
+    build: ./transaction-service
+    container_name: transaction-service
+    ports:
+      - "8086:8080"
+    depends_on:
+      - postgres
+      - eureka-server
+      - redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ledgerdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      eureka.client.serviceUrl.defaultZone: http://eureka-server:8761/eureka
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
