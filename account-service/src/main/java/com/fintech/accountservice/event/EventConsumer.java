@@ -1,6 +1,7 @@
 package com.fintech.accountservice.event;
 
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
@@ -10,6 +11,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.accountservice.model.base.Account;
 import com.fintech.accountservice.model.entity.OutboxEvent;
@@ -17,20 +19,20 @@ import com.fintech.accountservice.model.entity.UserFlag;
 import com.fintech.accountservice.repository.OutboxRepository;
 import com.fintech.accountservice.repository.UserFlagsRepository;
 import com.fintech.accountservice.service.abstracts.AccountService;
-import com.fintech.common.event.UserProfileCompletedEvent;
-import com.fintech.common.event.accountEvent.AccountCreatedEvent;
+import com.fintech.common.event.account.AccountCreatedEvent;
+import com.fintech.common.event.user.UserProfileCompletedEvent;
 
 @Component
-public class UserEventConsumer {
+public class EventConsumer {
     
     private final AccountService accountService;
     private final ExecutorService executorService;
     private final OutboxRepository outboxRepository;
     private final UserFlagsRepository userFlagsRepository;
     private final ObjectMapper objectMapper;
-    private static final Logger logger = LoggerFactory.getLogger(UserEventConsumer.class);
+    private static final Logger logger = LoggerFactory.getLogger(EventConsumer.class);
 
-    public UserEventConsumer(AccountService accountService,
+    public EventConsumer(AccountService accountService,
                             OutboxRepository outboxRepository,
                             ExecutorService executorService, 
                             ObjectMapper objectMapper, UserFlagsRepository userFlagsRepository) {
@@ -81,6 +83,21 @@ public class UserEventConsumer {
             logger.info("Profil tamamlanmış userId : {}", event.getUserId());
         }
       
+
+    }
+
+
+
+    @KafkaListener(topics= {"ledger.transfer", "ledger.withdraw", "ledger.deposit"}, groupId = "account-service")
+    public void handleLedgerEvents(String payload){
+        
+        try {
+            Map<String,Object> data = objectMapper.readValue(payload, new TypeReference<>() {});
+            accountService.proccessLedgerEvent(data);
+
+        }catch(Exception ex) {
+            logger.error("Ledger event işenirken hata meydana geldi : ", ex);
+        }
 
     }
     

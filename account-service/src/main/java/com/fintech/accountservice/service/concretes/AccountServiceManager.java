@@ -1,6 +1,8 @@
 package com.fintech.accountservice.service.concretes;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -12,19 +14,22 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fintech.accountservice.aspect.RequireProfileComplete;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
-import com.fintech.common.event.accountEvent.AccountCreatedEvent;
 import com.fintech.accountservice.model.base.Account;
 import com.fintech.accountservice.model.entity.OutboxEvent;
 import com.fintech.accountservice.model.enums.AccountStatus;
 import com.fintech.accountservice.model.enums.AccountType;
-import com.fintech.accountservice.model.enums.Currency;
 import com.fintech.accountservice.repository.AccountRepository;
 import com.fintech.accountservice.repository.OutboxRepository;
 import com.fintech.accountservice.repository.UserFlagsRepository;
 import com.fintech.accountservice.security.JwtUtil;
 import com.fintech.accountservice.service.abstracts.AccountService;
+import com.fintech.common.event.account.AccountCreatedEvent;
+import com.fintech.common.event.account.dto.response.ResponseAccountInfoDto;
+import com.fintech.common.event.account.enums.Currency;
+import com.fintech.common.event.transaction.enums.TransactionType;
 
 
 @Service
@@ -34,17 +39,19 @@ public class AccountServiceManager implements AccountService {
     private final AccountFactory accountFactory;
     private final UserFlagsRepository userFlagsRepository;
     private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
     private final JwtUtil jwtUtil;
     private static final Logger log = LoggerFactory.getLogger(AccountServiceManager.class);
 
     public AccountServiceManager(AccountRepository accountRepository, 
                                 UserFlagsRepository userFlagsRepository, 
                                 JwtUtil jwtUtil, 
-                                OutboxRepository outboxRepository, AccountFactory accountFactory) {
+                                OutboxRepository outboxRepository, AccountFactory accountFactory, ObjectMapper objectMapper) {
         this.accountRepository = accountRepository;
         this.accountFactory = accountFactory;
         this.userFlagsRepository = userFlagsRepository;
         this.outboxRepository = outboxRepository;
+        this.objectMapper = objectMapper;
         this.jwtUtil = jwtUtil;
     }
 
@@ -215,5 +222,102 @@ public class AccountServiceManager implements AccountService {
 
         return new ResponseBalanceDto(account.getBalance(), account.getAvailableBalance());
     }
+
+    @Transactional
+    public void proccessLedgerEvent(Map<String,Object> data){
+
+        try {
+
+            UUID accountId = UUID.fromString((String) data.get("accountId"));
+            UUID targetId = UUID.fromString((String) data.get("targetId"));
+
+            UUID senderId  = accountRepository.findById(accountId).get().getUserId();
+            if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(senderId)) {
+                throw new IllegalStateException("Gönderici kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+            }
+
+            UUID receiverId = accountRepository.findById(targetId).get().getUserId();
+            if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(receiverId)) {
+                throw new IllegalStateException("Alıcı kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+            }
+            
+            UUID transactionId = UUID.fromString((String) data.get("transactionId"));
+           
+            TransactionType transactionType = TransactionType.valueOf((String) data.get("transactionType")); // Stringden enuma cast için valueOf kullanılır
+            Currency currency = Currency.valueOf((String) data.get("currency"));
+            BigDecimal amount = new BigDecimal(data.get("amount").toString());
+
+            
+
+
+            switch(transactionType){
+                case TRANSFER -> {
+                    decreaseBalance(transactionId,targetId,currency,amount);
+                    increaseBalance(transactionId,accountId,currency,amount);
+                    
+                }
+                case DEPOSIT -> increaseBalance(transactionId,accountId,currency,amount);
+                case WITHDRAW -> decreaseBalance(transactionId,targetId,currency,amount); 
+            }
+
+            // TODO : Notification gibi servisler için burada outbox eventini oluştur
+
+        } catch (Exception e) {
+            log.error("Ledger event işlenirken hata oluştu! Transaction id: {}, {}", data.get("transactionId") , e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void increaseBalance(UUID transactionId, UUID accountId, Currency currency, BigDecimal amount){
+
+        Account account = accountRepository.findById(accountId)
+                                    .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadi!"));
+
+
+        account.setBalance(account.getBalance().add(amount));
+        accountRepository.save(account);
+
+                            
+
+    }
+
+    @Transactional
+    public void decreaseBalance(UUID transactionId, UUID targetId, Currency currency, BigDecimal amount){
+        Account account = accountRepository.findById(targetId)
+                                    .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadi!"));
+
+        account.setBalance(account.getBalance().subtract(amount));
+        accountRepository.save(account);
+                            
+    }
+
+      private OutboxEvent buildOutboxEvent(UUID transactionId, TransactionType type, Map<String, Object> payload) {
+        try {
+            return OutboxEvent.builder()
+                  //  .id(transactionId) 
+                    .topic("topic?." + type.name().toLowerCase()) // TODO : Notification için topic adı bak
+                    .payload(objectMapper.writeValueAsString(payload))
+                    .build();
+        } catch (JsonProcessingException e) {
+            log.error("Outbox serileştirirken hata meydana geldi: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ResponseAccountInfoDto getAccountInfo(UUID accountId){
+
+        Account account = accountRepository.findById(accountId)
+                                    .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadi!"));
+
+
+        UUID userId=account.getUserId();
+
+        if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(userId)) {
+            throw new IllegalStateException("Kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+        }
+        
+        return new ResponseAccountInfoDto(account.getCurrency(),account.getBalance());
+    }
+    
     
 }

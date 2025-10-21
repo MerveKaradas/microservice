@@ -11,7 +11,7 @@ import com.fintech.accountservice.model.entity.ForeignCurrencyAccount;
 import com.fintech.accountservice.model.entity.InvestmentAccount;
 import com.fintech.accountservice.model.entity.SavingsAccount;
 import com.fintech.accountservice.model.enums.AccountType;
-import com.fintech.accountservice.model.enums.Currency;
+import com.fintech.common.event.account.enums.Currency;
 
 
 @Service

@@ -1,11 +1,14 @@
 package com.fintech.accountservice.service.abstracts;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
 import com.fintech.accountservice.model.base.Account;
+import com.fintech.accountservice.model.entity.OutboxEvent;
+import com.fintech.common.event.account.dto.response.ResponseAccountInfoDto;
 
 public interface AccountService {
 
@@ -20,5 +23,9 @@ public interface AccountService {
     Account getAccount(String token,UUID accountId);
 
     ResponseBalanceDto getBalance(String token,UUID accountId);
+
+    void proccessLedgerEvent(Map<String,Object> data); 
+
+    ResponseAccountInfoDto getAccountInfo(UUID accountId);
     
 }

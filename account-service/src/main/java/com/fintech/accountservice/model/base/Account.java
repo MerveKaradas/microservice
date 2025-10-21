@@ -10,7 +10,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import com.fintech.accountservice.model.enums.AccountStatus;
 import com.fintech.accountservice.model.enums.AccountType;
-import com.fintech.accountservice.model.enums.Currency;
+import com.fintech.common.event.account.enums.Currency;
 
 import lombok.Builder;
 import lombok.Getter;

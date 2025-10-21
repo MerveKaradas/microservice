@@ -4,11 +4,17 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.GenericGenerator;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "outbox_events")
+@Builder
+@AllArgsConstructor
 public class OutboxEvent {
 
     @Id

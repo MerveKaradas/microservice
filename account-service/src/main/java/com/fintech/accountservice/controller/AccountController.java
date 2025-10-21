@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.accountservice.service.abstracts.AccountService;
+import com.fintech.common.event.account.dto.response.ResponseAccountInfoDto;
 import com.fintech.accountservice.dto.request.*;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
 import com.fintech.accountservice.model.base.Account;
@@ -59,6 +60,12 @@ public class AccountController {
         return ResponseEntity.ok(accountService.closeAccount(token, accountId));
     }
 
+
+    @GetMapping("/internal/{accountId}")
+    public ResponseEntity<ResponseAccountInfoDto> getAccountInfo(@PathVariable("accountId") UUID accountId){
+
+        return ResponseEntity.ok(accountService.getAccountInfo(accountId));
+    }
 
 
 
