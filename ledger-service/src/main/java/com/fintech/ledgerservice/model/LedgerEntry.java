@@ -44,12 +44,12 @@ public class LedgerEntry {
 
     @Column(nullable = false)
     @Builder.Default
-    private BigDecimal debit = BigDecimal.ZERO; // verici
+    private BigDecimal debit = BigDecimal.ZERO; // göneren hesap
 
 
     @Column(nullable = false)
     @Builder.Default
-    private BigDecimal credit = BigDecimal.ZERO; // alıcı
+    private BigDecimal credit = BigDecimal.ZERO; // alıcı hesap
 
     @Builder.Default
     private Instant createdAt = Instant.now();

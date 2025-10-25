@@ -1,6 +1,7 @@
 package com.fintech.accountservice.service.concretes;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fintech.accountservice.aspect.RequireProfileComplete;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
 import com.fintech.accountservice.model.base.Account;
@@ -225,46 +225,74 @@ public class AccountServiceManager implements AccountService {
 
     @Transactional
     public void proccessLedgerEvent(Map<String,Object> data){
-
         try {
+            //Gelen tüm zorunlu değerleri alıp null kontrolü uyguluyoruz
+            String accountIdStr = (String) data.get("accountId");
+            String transactionIdStr = (String) data.get("transactionId");
+            String transactionTypeStr = (String) data.get("transactionType");
+            String currencyStr = (String) data.get("currency");
+            Object amountObj = data.get("amount");
+            String targetIdStr = (String) data.get("targetId"); 
+            
+            if (accountIdStr == null || transactionIdStr == null || transactionTypeStr == null || currencyStr == null || amountObj == null) {
+                throw new IllegalArgumentException("Ledger Event'te zorunlu alanlar eksik.");
+            }
 
-            UUID accountId = UUID.fromString((String) data.get("accountId"));
-            UUID targetId = UUID.fromString((String) data.get("targetId"));
+            UUID accountId = UUID.fromString(accountIdStr);
+            UUID transactionId = UUID.fromString(transactionIdStr);
+            TransactionType transactionType = TransactionType.valueOf(transactionTypeStr);
+            Currency currency = Currency.valueOf(currencyStr);
+            BigDecimal amount = new BigDecimal(amountObj.toString());
+            
+            // targetId ve alıcı kontrolü sadece Transfer için gerekli
+            UUID targetId = null;
+            
+            if (transactionType == TransactionType.TRANSFER) {
+                
+                if (targetIdStr == null) {
+                    throw new IllegalArgumentException(transactionTypeStr + " işlemi için hedef hesap (targetId) eksik.");
+                }
+                
+                targetId = UUID.fromString(targetIdStr);
+                
+                // Alıcı kullanıcı 
+                UUID receiverId = accountRepository.findById(targetId)
+                                    .orElseThrow(() -> new IllegalArgumentException("Hedef hesap bulunamadı!"))
+                                    .getUserId();
 
-            UUID senderId  = accountRepository.findById(accountId).get().getUserId();
+                if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(receiverId)) {
+                    throw new IllegalStateException("Alıcı kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+                }
+            }
+            
+
+            UUID senderId = accountRepository.findById(accountId)
+                                .orElseThrow(() -> new IllegalArgumentException("Gönderici hesap bulunamadı!"))
+                                .getUserId();
+            
             if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(senderId)) {
                 throw new IllegalStateException("Gönderici kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
             }
 
-            UUID receiverId = accountRepository.findById(targetId).get().getUserId();
-            if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(receiverId)) {
-                throw new IllegalStateException("Alıcı kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
-            }
-            
-            UUID transactionId = UUID.fromString((String) data.get("transactionId"));
-           
-            TransactionType transactionType = TransactionType.valueOf((String) data.get("transactionType")); // Stringden enuma cast için valueOf kullanılır
-            Currency currency = Currency.valueOf((String) data.get("currency"));
-            BigDecimal amount = new BigDecimal(data.get("amount").toString());
-
-            
-
 
             switch(transactionType){
                 case TRANSFER -> {
-                    decreaseBalance(transactionId,targetId,currency,amount);
-                    increaseBalance(transactionId,accountId,currency,amount);
-                    
+                    decreaseBalance(transactionId, accountId, currency, amount); // Gönderen
+                    increaseBalance(transactionId, targetId, currency, amount);  // Alan
                 }
-                case DEPOSIT -> increaseBalance(transactionId,accountId,currency,amount);
-                case WITHDRAW -> decreaseBalance(transactionId,targetId,currency,amount); 
+                case DEPOSIT -> increaseBalance(transactionId, accountId, currency, amount);
+                case WITHDRAW -> decreaseBalance(transactionId, accountId, currency, amount); 
             }
 
             // TODO : Notification gibi servisler için burada outbox eventini oluştur
 
         } catch (Exception e) {
-            log.error("Ledger event işlenirken hata oluştu! Transaction id: {}, {}", data.get("transactionId") , e.getMessage());
+            Object transactionId = data != null ? data.get("transactionId") : "Bilinmiyor";
+            log.error("Ledger event işlenirken hata oluştu! Transaction id: {}, Hata: {}", transactionId, e.getMessage(), e);
         }
+        
+
+        
     }
 
     @Transactional
@@ -275,6 +303,7 @@ public class AccountServiceManager implements AccountService {
 
 
         account.setBalance(account.getBalance().add(amount));
+        account.setUpdatedAt(Instant.now());
         accountRepository.save(account);
 
                             
@@ -287,6 +316,7 @@ public class AccountServiceManager implements AccountService {
                                     .orElseThrow(() -> new IllegalArgumentException("Mevcut bir hesap bulunamadi!"));
 
         account.setBalance(account.getBalance().subtract(amount));
+        account.setUpdatedAt(Instant.now());
         accountRepository.save(account);
                             
     }

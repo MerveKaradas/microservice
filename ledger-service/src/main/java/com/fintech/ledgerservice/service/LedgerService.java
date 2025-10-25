@@ -104,7 +104,6 @@ public class LedgerService {
 
             UUID transactionId = UUID.fromString((String) data.get("transactionId"));
             UUID accountId = UUID.fromString((String) data.get("accountId"));
-            UUID targetId = UUID.fromString((String) data.get("targetId"));
             TransactionType transactionType = TransactionType.valueOf((String) data.get("transactionType")); // Stringden enuma cast için valueOf kullanılır
             Currency currency = Currency.valueOf((String) data.get("currency"));
             BigDecimal amount = new BigDecimal(data.get("amount").toString());
@@ -123,7 +122,7 @@ public class LedgerService {
 
         }catch(Exception ex) {
 
-            log.error("Transfer işlenirken hata meydana geldi! :",ex);
+            log.error("Deposit işlenirken hata meydana geldi! :",ex);
 
         }
 
@@ -137,7 +136,6 @@ public class LedgerService {
            
             UUID transactionId = UUID.fromString((String) data.get("transactionId"));
             UUID accountId = UUID.fromString((String) data.get("accountId"));
-            UUID targetId = UUID.fromString((String) data.get("targetId"));
             TransactionType transactionType = TransactionType.valueOf((String) data.get("transactionType")); // Stringden enuma cast için valueOf kullanılır
             Currency currency = Currency.valueOf((String) data.get("currency"));
             BigDecimal amount = new BigDecimal(data.get("amount").toString());
@@ -157,7 +155,7 @@ public class LedgerService {
 
         }catch(Exception ex) {
 
-            log.error("Transfer işlenirken hata meydana geldi! :",ex);
+            log.error("Withdraw işlenirken hata meydana geldi! :",ex);
 
         }
 

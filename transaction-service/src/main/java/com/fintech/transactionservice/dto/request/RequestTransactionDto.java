@@ -14,6 +14,7 @@ public class RequestTransactionDto {
     @Pattern(regexp = "DEPOSIT|WITHDRAW|TRANSFER")
     private String transactionType;
 
+    @NotNull(message = "Hesap ID'si boş olamaz!")
     private UUID accountId;
     private UUID targetId;
 

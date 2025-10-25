@@ -1,12 +1,11 @@
 package com.fintech.transactionservice.service.concretes;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,6 +64,9 @@ public class TransactionServiceManager implements TransactionService {
                 throw new AccountServiceException("Hesap bilgisi alınamadı! " + e);
             }
 
+            if (accountInfo == null) {
+                throw new AccountServiceException("Hesap servisi boş yanıt döndürdü (Hesap bulunamadı veya iç hata).");
+            }
 
             if(accountInfo.getCurrency() != Currency.valueOf(request.getCurrency())){
                 throw new CurrencyMismatchException("Hesap para birimi uyuşmuyor!");
@@ -91,17 +93,19 @@ public class TransactionServiceManager implements TransactionService {
                 }
             }
 
+
             transaction.setTransactionStatus(TransactionStatus.COMPLETED);
 
-            Map<String, Object> payload = Map.of(
-            "transactionId", transaction.getId().toString(),
-            "accountId", request.getAccountId().toString(),
-            "targetId", request.getTargetId() != null ? request.getTargetId().toString() : null,
-            "transactionType" , transaction.getTransactionType().name(),
-            "currency", transaction.getCurrency().name(),
-            "amount", transaction.getAmount()
-            );
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("transactionId", transaction.getId().toString());
+            payload.put("accountId", request.getAccountId().toString());
+            payload.put("transactionType", transaction.getTransactionType().name());
+            payload.put("currency", transaction.getCurrency().name());
+            payload.put("amount", transaction.getAmount());
 
+            if (request.getTargetId() != null) {
+                payload.put("targetId", request.getTargetId().toString());
+}
 
             OutboxEvent outbox = OutboxEvent.builder()
                             .id(transaction.getId())
@@ -121,8 +125,7 @@ public class TransactionServiceManager implements TransactionService {
 
         } catch(Exception ex) {
 
-            log.error("Transaction gönderimi başarısız! Hata : ",ex);
-            transaction.setTransactionStatus(TransactionStatus.FAILED);
+            log.error("Transaction gönderimi başarısız! Hata Tipi: {} Mesaj: {}", ex.getClass().getName(), ex.getMessage(), ex);            transaction.setTransactionStatus(TransactionStatus.FAILED);
             transaction.setFailedReason(ex.getMessage());
             transactionRepository.save(transaction);
 
