@@ -5,11 +5,14 @@ com\fintech\common\event\auth\UserCreatedData.class
 com\fintech\common\event\account\dto\response\ResponseAccountInfoDto.class
 com\fintech\common\event\transaction\enums\TransactionStatus.class
 com\fintech\common\event\auth\PasswordChangedData.class
+com\fintech\common\event\account\model\NotificationEvent$NotificationEventBuilder.class
 com\fintech\common\event\auth\EventData.class
 com\fintech\common\event\auth\AuthEvent$Builder.class
 com\fintech\common\event\auth\AuthEventType.class
 com\fintech\common\event\account\enums\Currency.class
+com\fintech\common\event\user\ResponseUserInfoDto.class
 com\fintech\common\event\account\AccountCreatedEvent.class
+com\fintech\common\event\account\model\NotificationEvent.class
 com\fintech\common\event\auth\Role.class
 com\fintech\common\event\transaction\enums\TransactionType.class
 com\fintech\common\event\auth\AuthEvent.class

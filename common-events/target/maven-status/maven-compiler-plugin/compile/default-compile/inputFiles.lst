@@ -1,7 +1,9 @@
+C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\account\model\NotificationEvent.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\auth\AuthEventType.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\account\dto\response\ResponseAccountInfoDto.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\user\UserProfileCompletedEvent.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\auth\PasswordChangedData.java
+C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\user\ResponseUserInfoDto.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\auth\Role.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\auth\UserChangedEmailData.java
 C:\Users\merve\OneDrive\Masaüstü\microservice\common-events\src\main\java\com\fintech\common\event\transaction\enums\TransactionType.java
