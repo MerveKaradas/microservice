@@ -108,6 +108,17 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
 
+  notification-service:
+    build: ./notification-service
+    depends_on:
+      - mailhog
+      - eureka-server
+    environment:
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: 1025
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
@@ -159,6 +170,11 @@ services:
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025" #SMTP
+      - "8025:8025" #WebUI
 
 
 volumes:

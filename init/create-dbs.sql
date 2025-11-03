@@ -3,3 +3,4 @@ CREATE DATABASE authdb;
 CREATE DATABASE userdb;
 CREATE DATABASE ledgerdb;
 CREATE DATABASE transactiondb;
+CREATE DATABASE notificationdb;
