@@ -6,7 +6,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -34,22 +33,15 @@ public class OutboxEvent {
     private String payload;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean processed = false;
 
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private Instant createdAt = Instant.now();
 
-    
 
     public OutboxEvent() {
-    }
-
-    
-    public OutboxEvent(UUID id, String topic, String payload, boolean processed) {
-        this.id = id;
-        this.topic = topic;
-        this.payload = payload;
-        this.processed = processed;
     }
 
 
@@ -81,9 +73,13 @@ public class OutboxEvent {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
+    @PrePersist 
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
     }
+
 
     public UUID getId() {
         return id;

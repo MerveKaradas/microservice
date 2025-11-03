@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.accountservice.dto.request.RequestCreateAccountDto;
 import com.fintech.accountservice.dto.response.ResponseBalanceDto;
@@ -29,6 +31,7 @@ import com.fintech.accountservice.service.abstracts.AccountService;
 import com.fintech.common.event.account.AccountCreatedEvent;
 import com.fintech.common.event.account.dto.response.ResponseAccountInfoDto;
 import com.fintech.common.event.account.enums.Currency;
+import com.fintech.common.event.account.model.NotificationEvent;
 import com.fintech.common.event.transaction.enums.TransactionType;
 
 
@@ -226,6 +229,7 @@ public class AccountServiceManager implements AccountService {
     @Transactional
     public void proccessLedgerEvent(Map<String,Object> data){
         try {
+
             //Gelen tüm zorunlu değerleri alıp null kontrolü uyguluyoruz
             String accountIdStr = (String) data.get("accountId");
             String transactionIdStr = (String) data.get("transactionId");
@@ -243,56 +247,124 @@ public class AccountServiceManager implements AccountService {
             TransactionType transactionType = TransactionType.valueOf(transactionTypeStr);
             Currency currency = Currency.valueOf(currencyStr);
             BigDecimal amount = new BigDecimal(amountObj.toString());
-            
-            // targetId ve alıcı kontrolü sadece Transfer için gerekli
-            UUID targetId = null;
-            
-            if (transactionType == TransactionType.TRANSFER) {
-                
-                if (targetIdStr == null) {
-                    throw new IllegalArgumentException(transactionTypeStr + " işlemi için hedef hesap (targetId) eksik.");
-                }
-                
-                targetId = UUID.fromString(targetIdStr);
-                
-                // Alıcı kullanıcı 
-                UUID receiverId = accountRepository.findById(targetId)
-                                    .orElseThrow(() -> new IllegalArgumentException("Hedef hesap bulunamadı!"))
-                                    .getUserId();
 
-                if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(receiverId)) {
-                    throw new IllegalStateException("Alıcı kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
-                }
-            }
-            
+            Account account = accountRepository.findById(accountId)
+                            .orElseThrow(() -> new IllegalArgumentException("Hesap bulunamadı!"));
 
-            UUID senderId = accountRepository.findById(accountId)
-                                .orElseThrow(() -> new IllegalArgumentException("Gönderici hesap bulunamadı!"))
-                                .getUserId();
+            Account senderAccount = account;
             
-            if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(senderId)) {
+            if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(senderAccount.getUserId())) {
                 throw new IllegalStateException("Gönderici kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
             }
 
+            
 
             switch(transactionType){
                 case TRANSFER -> {
+
+                    // targetId ve alıcı kontrolü sadece Transfer için gerekli
+                    UUID targetId = null;
+
+                    if (targetIdStr == null) {
+                        throw new IllegalArgumentException(transactionTypeStr + " işlemi için hedef hesap (targetId) eksik.");
+                    }
+                        
+                    targetId = UUID.fromString(targetIdStr);
+                        
+                    // Alıcı kullanıcı 
+                    Account receiver = accountRepository.findById(targetId)
+                                        .orElseThrow( () -> new RuntimeException("Alıcı hesap bulunamadi"));
+                   
+                    if (!userFlagsRepository.existsByUserIdAndProfileCompleteTrue(receiver.getUserId())) {
+                        throw new IllegalStateException("Alıcı kullanıcı profil bilgileri tamamlanmadan önce mevcut işleme devam edilemez.");
+                    }    
+
+
                     decreaseBalance(transactionId, accountId, currency, amount); // Gönderen
                     increaseBalance(transactionId, targetId, currency, amount);  // Alan
+
+          
+                    NotificationEvent receiverEvent = NotificationEvent.builder()
+                                                        .receiverId(receiver.getId())
+                                                        .senderId(senderAccount.getId())
+                                                        .transactionId(transactionId)
+                                                        .userId(receiver.getUserId()) //bildirimi alan kullanıcı
+                                                        .amount(amount)
+                                                        .currency(currency)
+                                                        .transactionType(transactionType)
+                                                        .timestamp(Instant.now())
+                                                        .build();
+
+                    NotificationEvent senderEvent = NotificationEvent.builder()
+                                                        .receiverId(receiver.getId())
+                                                        .senderId(senderAccount.getId())
+                                                        .transactionId(transactionId)
+                                                        .userId(senderAccount.getUserId()) // bildirimi alan
+                                                        .amount(amount)
+                                                        .currency(currency)
+                                                        .transactionType(transactionType)
+                                                        .timestamp(Instant.now())
+                                                        .build();
+
+                
+                    Map<String, Object> receiverNotification = objectMapper.convertValue(receiverEvent, new TypeReference<>() {});
+                    Map<String, Object> senderNotification = objectMapper.convertValue(senderEvent, new TypeReference<>() {});
+                    
+                    outboxRepository.save(buildOutboxEvent(transactionId, transactionType, receiverNotification));
+                    outboxRepository.save(buildOutboxEvent(transactionId, transactionType, senderNotification));
+                    
                 }
-                case DEPOSIT -> increaseBalance(transactionId, accountId, currency, amount);
-                case WITHDRAW -> decreaseBalance(transactionId, accountId, currency, amount); 
+                case DEPOSIT -> {
+                    
+                    increaseBalance(transactionId, accountId, currency, amount);
+
+                    NotificationEvent senderEvent = NotificationEvent.builder()
+                                                        .receiverId(account.getId()) //alıcı
+                                                        .senderId(null) // gönderen
+                                                        .transactionId(transactionId)
+                                                        .userId(account.getUserId()) // bildirimi alan
+                                                        .amount(amount)
+                                                        .currency(currency)
+                                                        .transactionType(transactionType)
+                                                        .timestamp(Instant.now())
+                                                        .build();
+
+                
+                   
+                    Map<String, Object> senderNotification = objectMapper.convertValue(senderEvent, new TypeReference<>() {});
+                    outboxRepository.save(buildOutboxEvent(transactionId, transactionType, senderNotification));
+                }
+                case WITHDRAW -> {
+                    decreaseBalance(transactionId, accountId, currency, amount); 
+
+                    NotificationEvent senderEvent = NotificationEvent.builder()
+                                                        .receiverId(null) //alıcı
+                                                        .senderId(account.getId()) // gönderen
+                                                        .transactionId(transactionId)
+                                                        .userId(account.getUserId()) // bildirimi alan
+                                                        .amount(amount)
+                                                        .currency(currency)
+                                                        .transactionType(transactionType)
+                                                        .timestamp(Instant.now())
+                                                        .build();
+
+                
+                   
+                    Map<String, Object> senderNotification = objectMapper.convertValue(senderEvent, new TypeReference<>() {});
+                    outboxRepository.save(buildOutboxEvent(transactionId, transactionType, senderNotification));
+                
+                }
             }
 
-            // TODO : Notification gibi servisler için burada outbox eventini oluştur
+
+           
+        
 
         } catch (Exception e) {
             Object transactionId = data != null ? data.get("transactionId") : "Bilinmiyor";
             log.error("Ledger event işlenirken hata oluştu! Transaction id: {}, Hata: {}", transactionId, e.getMessage(), e);
+            throw e;
         }
-        
-
-        
     }
 
     @Transactional
@@ -324,8 +396,8 @@ public class AccountServiceManager implements AccountService {
       private OutboxEvent buildOutboxEvent(UUID transactionId, TransactionType type, Map<String, Object> payload) {
         try {
             return OutboxEvent.builder()
-                  //  .id(transactionId) 
-                    .topic("topic?." + type.name().toLowerCase()) // TODO : Notification için topic adı bak
+                    .id(transactionId) 
+                    .topic("notification.transaction." + type.name().toLowerCase()) 
                     .payload(objectMapper.writeValueAsString(payload))
                     .build();
         } catch (JsonProcessingException e) {
