@@ -5,6 +5,7 @@ import java.util.UUID;
 import javax.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fintech.userservice.service.abstracts.UserService;
+import com.fintech.common.event.user.ResponseUserInfoDto;
 import com.fintech.userservice.dto.request.CompleteProfileRequestDto;
 import com.fintech.userservice.dto.request.RequestTelephoneNumberDto;
 import com.fintech.userservice.dto.response.CompleteProfileResponseDto;
@@ -39,6 +41,12 @@ public class UserController {
                             @RequestBody @Valid RequestTelephoneNumberDto newPhoneNumber){
          userService.changeTelephoneNumber(token,newPhoneNumber);
         return ResponseEntity.ok("Telefon numarası başarılı bir şekilde değiştirildi.");
+    }
+
+    @GetMapping("/getInfo/{userId}")
+    public ResponseEntity<ResponseUserInfoDto> getUserInfo(@PathVariable("userId") UUID userId){
+        return ResponseEntity.ok(userService.getUserInfo(userId));
+        
     }
 
 

@@ -9,6 +9,7 @@ import com.fintech.common.event.auth.UserChangedEmailData;
 import com.fintech.common.event.auth.UserCreatedData;
 import com.fintech.common.event.auth.UserDeletedData;
 import com.fintech.common.event.user.ProfileStatus;
+import com.fintech.common.event.user.ResponseUserInfoDto;
 import com.fintech.common.event.user.UserProfileCompletedEvent;
 import com.fintech.userservice.exception.ProfileAlreadyCompleted;
 import com.fintech.userservice.exception.ProfileStatusInCompleteException;
@@ -183,5 +184,19 @@ public class UserServiceManager implements UserService {
 
 
       
+    }
+
+
+    public ResponseUserInfoDto getUserInfo(UUID userId) {
+
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Kullanici bulunamadi"));
+
+        if(user.getProfileStatus() == ProfileStatus.INCOMPLETE) {
+            throw new ProfileStatusInCompleteException("Profil bilgileri tamamlanmadan diğer işlemlere devam edilemez. Lütfen devam etmeden önce profil bilgilerinizi tamamlayınız.");
+        }
+
+
+        return new ResponseUserInfoDto(user.getEmail(),user.getFirstName(),user.getLastName());
     }
 }
